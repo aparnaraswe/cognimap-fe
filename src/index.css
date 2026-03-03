@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════
+   COGNIMAP DESIGN SYSTEM
+   Premium • Warm • Enigmatic
+   ═══════════════════════════════════════════ */
+
+:root {
+  --bg: #FEFDFB;
+  --bg-subtle: #FDF9F3;
+  --border: #F5E4CC;
+  --border-strong: #EDD5B3;
+  --ink: #1C1917;
+  --ink-soft: #44403C;
+  --ink-dim: #78716C;
+  --ink-faint: #A8A29E;
+  --copper: #B45309;
+  --copper-bright: #F59E0B;
+  --sage: #4D7C5E;
+}
+
+* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Source Sans 3', system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+/* Selection color */
+::selection { background: rgba(180, 83, 9, 0.15); color: var(--ink); }
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Print styles */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+}
+
+/* Utility layers */
+@layer components {
+  .text-display {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+  
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl
+           font-semibold text-sm text-white transition-all duration-200;
+    background: linear-gradient(135deg, #B45309, #D97706);
+    box-shadow: 0 4px 16px rgba(180, 83, 9, 0.2);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(180, 83, 9, 0.3);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl
+           font-semibold text-sm transition-all duration-200 border;
+    border-color: var(--border-strong);
+    color: var(--ink-soft);
+    background: var(--bg);
+  }
+  .btn-secondary:hover {
+    border-color: var(--copper);
+    color: var(--copper);
+    background: rgba(180, 83, 9, 0.03);
+  }
+  
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg
+           font-medium text-sm transition-all duration-200;
+    color: var(--ink-dim);
+  }
+  .btn-ghost:hover {
+    background: rgba(0,0,0,0.04);
+    color: var(--ink);
+  }
+
+  .card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(28, 25, 23, 0.04);
+    transition: all 0.2s ease;
+  }
+  .card:hover {
+    box-shadow: 0 4px 16px rgba(28, 25, 23, 0.06);
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200;
+    background: var(--bg-subtle);
+    border: 1.5px solid var(--border);
+    color: var(--ink);
+  }
+  .input-field:focus {
+    border-color: var(--copper);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.08);
+    outline: none;
+  }
+  .input-field::placeholder {
+    color: var(--ink-faint);
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold;
+  }
+
+  /* Domain accent colors */
+  .accent-gf { --accent: #6366F1; }
+  .accent-gv { --accent: #0891B2; }
+  .accent-gq { --accent: #D97706; }
+  .accent-gc { --accent: #059669; }
+  .accent-gs { --accent: #DC2626; }
+}
+
+/* Subtle background texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background: 
+    radial-gradient(ellipse at 20% 0%, rgba(180, 83, 9, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(77, 124, 94, 0.03) 0%, transparent 50%);
+}
