@@ -2,11 +2,24 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 
+const DOMAIN_LABELS = {
+  gf: 'Fluid Reasoning', gv: 'Visual Spatial', gq: 'Quantitative',
+  gc: 'Verbal Reasoning', gs: 'Processing Speed',
+  personality: 'Personality', interest: 'Career Interest',
+};
+const DOMAIN_COLORS = { gf: '#6366F1', gv: '#0891B2', gq: '#D97706', gc: '#059669', gs: '#DC2626', personality: '#EC4899', interest: '#F59E0B' };
+
+const TEST_TYPES = [
+  { key: 'cognitive', label: 'Cognitive Aptitude', icon: '🧠' },
+  { key: 'personality', label: 'Personality (Big Five)', icon: '💖' },
+  { key: 'interest', label: 'Career Interest (RIASEC)', icon: '🧭' },
+];
+
 export default function SessionAssignPage() {
   const navigate = useNavigate();
-  const [batteries, setBatteries] = useState([]);
   const [students, setStudents] = useState([]);
-  const [selectedBattery, setSelectedBattery] = useState('');
+  const [itemStats, setItemStats] = useState(null);
+  const [selectedType, setSelectedType] = useState('');
   const [selectedStudents, setSelectedStudents] = useState(new Set());
   const [generateTokens, setGenerateTokens] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -15,8 +28,7 @@ export default function SessionAssignPage() {
   const [searchQ, setSearchQ] = useState('');
 
   useEffect(() => {
-    api.get('/batteries?status=active').then(d => setBatteries(d.batteries || [])).catch(() => {});
-    // Fetch students — in real app this would be paginated/filtered
+    api.get('/items/stats').then(d => setItemStats(d)).catch(() => {});
     api.get('/auth/users?role=student&limit=200').then(d => setStudents(d.users || d || [])).catch(() => {});
   }, []);
 
@@ -38,12 +50,12 @@ export default function SessionAssignPage() {
   };
 
   const assign = async () => {
-    if (!selectedBattery) { setError('Select a battery'); return; }
+    if (!selectedType) { setError('Select a test type'); return; }
     if (selectedStudents.size === 0) { setError('Select at least one student'); return; }
     setSaving(true); setError('');
     try {
-      const d = await api.post('/sessions/assign', {
-        batteryId: selectedBattery,
+      const d = await api.post('/sessions/assign-by-type', {
+        testType: selectedType,
         userIds: [...selectedStudents],
         generateTokens
       });
@@ -60,6 +72,8 @@ export default function SessionAssignPage() {
            (s.email||'').toLowerCase().includes(q) ||
            (s.grade||'').toLowerCase().includes(q);
   });
+
+  const selectedTypeObj = TEST_TYPES.find(t => t.key === selectedType);
 
   // Success screen
   if (result) return (
@@ -110,20 +124,51 @@ export default function SessionAssignPage() {
       <button onClick={() => navigate('/admin/sessions')} className="text-xs font-bold text-gold hover:text-gold-dark mb-4 inline-block">
         ← Back to Sessions
       </button>
-      <h1 className="text-xl font-black text-ink-DEFAULT mb-2">Assign Test Battery</h1>
-      <p className="text-sm text-ink-dim mb-6">Select a battery and choose which students should take it.</p>
+      <h1 className="text-xl font-black text-ink-DEFAULT mb-2">Assign Test</h1>
+      <p className="text-sm text-ink-dim mb-6">Select a test type and choose which students should take it.</p>
 
-      {/* Step 1: Battery */}
+      {/* Step 1: Test Type */}
       <div className="mb-6">
-        <label className="text-xs font-bold text-ink-faint uppercase tracking-wider">1 · Select Battery *</label>
-        <select value={selectedBattery} onChange={e => setSelectedBattery(e.target.value)}
-          className="block w-full mt-1.5 px-4 py-3 bg-white border-2 border-ivory-200 rounded-xl text-sm font-bold outline-none focus:border-gold">
-          <option value="">Choose a battery...</option>
-          {batteries.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-        </select>
-        {batteries.length === 0 && (
-          <p className="text-xs text-ink-faint mt-1">No batteries found. <button onClick={() => navigate('/admin/batteries')} className="text-gold font-bold">Create one first →</button></p>
-        )}
+        <label className="text-xs font-bold text-ink-faint uppercase tracking-wider">1 · Select Test Type *</label>
+        <div className="mt-2 space-y-2">
+          {TEST_TYPES.map(tt => {
+            const stats = itemStats?.[tt.key] || { total: 0, domains: {} };
+            const isReady = stats.total > 0;
+            const isSelected = selectedType === tt.key;
+            const domains = Object.entries(stats.domains);
+
+            return (
+              <button key={tt.key} onClick={() => isReady && setSelectedType(tt.key)}
+                disabled={!isReady}
+                className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                  !isReady ? 'border-stone-100 bg-stone-50 opacity-60 cursor-not-allowed' :
+                  isSelected ? 'border-amber-500 bg-amber-50' :
+                  'border-ivory-200 hover:border-stone-300 bg-white cursor-pointer'
+                }`}>
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">{tt.icon}</span>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold text-stone-800">{tt.label}</div>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {domains.map(([d, count]) => (
+                        <span key={d} className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full text-white"
+                          style={{ background: DOMAIN_COLORS[d] || '#6B7280' }}>
+                          {DOMAIN_LABELS[d] || d}: {count}
+                        </span>
+                      ))}
+                      {!isReady && <span className="text-[10px] text-stone-400">No items uploaded</span>}
+                    </div>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    isSelected ? 'border-amber-500 bg-amber-500' : 'border-stone-300'
+                  }`}>
+                    {isSelected && <span className="text-white text-[10px]">✓</span>}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Step 2: Students */}
@@ -137,7 +182,7 @@ export default function SessionAssignPage() {
           placeholder="Search by name, email, or grade..."/>
         <div className="bg-white border-2 border-ivory-200 rounded-2xl max-h-72 overflow-auto">
           {filteredStudents.length === 0 ? (
-            <div className="p-6 text-center text-xs text-ink-faint">No students found. Register students first via the API.</div>
+            <div className="p-6 text-center text-xs text-ink-faint">No students found. Register students first via the Users page.</div>
           ) : filteredStudents.map(s => (
             <label key={s.id} className={`flex items-center gap-3 px-4 py-2.5 border-b border-ivory-200/30 cursor-pointer hover:bg-ivory-100/50 transition-colors ${selectedStudents.has(s.id) ? 'bg-amber-50/50' : ''}`}>
               <input type="checkbox" checked={selectedStudents.has(s.id)} onChange={() => toggleStudent(s.id)}

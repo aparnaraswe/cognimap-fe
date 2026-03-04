@@ -17,6 +17,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
+      console.log("dddddddddddddddddddddddddddd")
       const user = await login(email, password);
       if (['super_admin','psychologist','client_admin'].includes(user.role)) navigate('/admin');
       else navigate('/student');

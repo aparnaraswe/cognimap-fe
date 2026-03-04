@@ -292,6 +292,8 @@ export default function TestRunner() {
   const [error, setError] = useState('');
   const [scores, setScores] = useState(null);
   const [showDomainIntro, setShowDomainIntro] = useState(null);
+  const [testType, setTestType] = useState('cognitive');
+  const [likertValue, setLikertValue] = useState(null);
   const startMsRef = useRef(0);
   const timerRef = useRef(null);
   const timerEndRef = useRef(0);
@@ -300,6 +302,7 @@ export default function TestRunner() {
   useEffect(() => {
     api.post(`/sessions/${sessionId}/start`)
       .then(data => {
+        if (data.testType) setTestType(data.testType);
         if (data.complete) { setScores(data.scores); }
         else { receiveItem(data.item, data.progress); }
       })
@@ -308,32 +311,48 @@ export default function TestRunner() {
   }, [sessionId]);
 
   const receiveItem = useCallback((newItem, prog) => {
-    if (prog && lastDomainRef.current && prog.domain !== lastDomainRef.current) {
+    if (!newItem) return;
+
+    // Domain intro for cognitive tests
+    if (prog && lastDomainRef.current && prog.domain !== lastDomainRef.current && prog.testType !== 'personality' && prog.testType !== 'interest') {
       setShowDomainIntro({ domain: prog.domain, label: prog.domainLabel, item: newItem, progress: prog });
       lastDomainRef.current = prog.domain;
       return;
     }
-    if (prog) lastDomainRef.current = prog.domain;
+    if (prog) lastDomainRef.current = prog.domain || prog.section;
 
     setItem(newItem);
     setProgress(prog);
     setAnswered(false);
     setSelectedIdx(null);
+    setLikertValue(null);
 
-    const indexed = newItem.options.map((o, i) => ({ ...o, origIdx: i }));
-    const shuf = shuffle(indexed);
-    setShuffledOpts(shuf);
-    setCorrectShuffledIdx(shuf.findIndex(o => o.origIdx === newItem.correctIndex));
+    // Only shuffle options for cognitive tests
+    if (newItem.options && newItem.options.length > 0) {
+      const indexed = newItem.options.map((o, i) => ({ ...o, origIdx: i }));
+      const shuf = shuffle(indexed);
+      setShuffledOpts(shuf);
+      setCorrectShuffledIdx(shuf.findIndex(o => o.origIdx === newItem.correctIndex));
+    } else {
+      setShuffledOpts([]);
+      setCorrectShuffledIdx(-1);
+    }
 
     startMsRef.current = Date.now();
     clearInterval(timerRef.current);
-    timerEndRef.current = Date.now() + newItem.timeLimitSec * 1000;
-    setTimerPct(100);
-    timerRef.current = setInterval(() => {
-      const rem = timerEndRef.current - Date.now();
-      if (rem <= 0) { clearInterval(timerRef.current); setTimerPct(0); handleTimeout(); }
-      else setTimerPct((rem / (newItem.timeLimitSec * 1000)) * 100);
-    }, 50);
+
+    // Only run timer for cognitive tests
+    if (newItem.timeLimitSec && newItem.timeLimitSec > 0) {
+      timerEndRef.current = Date.now() + newItem.timeLimitSec * 1000;
+      setTimerPct(100);
+      timerRef.current = setInterval(() => {
+        const rem = timerEndRef.current - Date.now();
+        if (rem <= 0) { clearInterval(timerRef.current); setTimerPct(0); handleTimeout(); }
+        else setTimerPct((rem / (newItem.timeLimitSec * 1000)) * 100);
+      }, 50);
+    } else {
+      setTimerPct(100); // No timer for personality/interest
+    }
   }, []);
 
   const startDomainSection = useCallback(() => {
@@ -363,23 +382,28 @@ export default function TestRunner() {
     if (!item) return;
     const rt = Date.now() - startMsRef.current;
     try {
-      const data = await api.post(`/sessions/${sessionId}/respond`, {
+      const payload = {
         itemId: item._dbItemId,
-        selectedIndex: chosen ? chosen.origIdx : null,
-        selectedValue: chosen ? { value: chosen.value, label: chosen.label } : null,
-        isCorrect,
         reactionTimeMs: rt,
         timedOut,
-      });
+      };
+      if (testType === 'personality' || testType === 'interest') {
+        payload.likertValue = likertValue;
+        payload.selectedIndex = likertValue;
+      } else {
+        payload.selectedIndex = chosen ? chosen.origIdx : null;
+        payload.selectedValue = chosen ? { value: chosen.value, label: chosen.label } : null;
+      }
+      const data = await api.post(`/sessions/${sessionId}/respond`, payload);
       if (data.complete) {
-        setTimeout(() => setScores(data.scores), 1200);
+        setTimeout(() => setScores(data.scores), testType === 'cognitive' ? 1200 : 400);
       } else {
         setItem(prev => ({ ...prev, _next: data.item, _nextProgress: data.progress }));
       }
     } catch (err) {
       console.error('Response error:', err);
     }
-  }, [item, sessionId]);
+  }, [item, sessionId, testType, likertValue]);
 
   const nextItem = useCallback(() => {
     if (!item?._next) return;
@@ -435,6 +459,107 @@ export default function TestRunner() {
 
   if (!item) return null;
 
+  // ═══ PERSONALITY / INTEREST TEST UI ═══
+  if (testType === 'personality' || testType === 'interest') {
+    const isPers = testType === 'personality';
+    const labels = item.likertLabels || [
+      { value: 1, label: isPers ? 'Strongly Disagree' : 'Not at all' },
+      { value: 2, label: isPers ? 'Disagree' : 'A little' },
+      { value: 3, label: isPers ? 'Neutral' : 'Somewhat' },
+      { value: 4, label: isPers ? 'Agree' : 'Quite a lot' },
+      { value: 5, label: isPers ? 'Strongly Agree' : 'Very much' },
+    ];
+    const sectionLabel = progress?.sectionLabel || (isPers ? 'Personality' : 'Interest');
+    const sectionIcon = isPers ? '💖' : '🧭';
+    const sectionColor = isPers ? '#EC4899' : '#F59E0B';
+
+    const handleLikert = (val) => {
+      setLikertValue(val);
+      setAnswered(true);
+      // Send response with the value directly (don't rely on state update)
+      const rt = Date.now() - startMsRef.current;
+      api.post(`/sessions/${sessionId}/respond`, {
+        itemId: item._dbItemId,
+        likertValue: val,
+        selectedIndex: val,
+        reactionTimeMs: rt,
+        timedOut: false,
+      }).then(data => {
+        if (data.complete) {
+          setTimeout(() => setScores(data.scores), 400);
+        } else {
+          // Auto-advance to next item
+          setTimeout(() => receiveItem(data.item, data.progress), 400);
+        }
+      }).catch(err => console.error('Likert response error:', err));
+    };
+
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-5" style={{ background: 'var(--bg)' }}>
+        {/* Section label */}
+        <div className="w-full max-w-lg flex items-center justify-between mb-3 px-1">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">{sectionIcon}</span>
+            <span className="text-xs font-bold" style={{ color: sectionColor }}>{sectionLabel}</span>
+          </div>
+          <span className="text-xs font-mono" style={{ color: 'var(--ink-faint)' }}>
+            {progress?.itemNumber || 1}/{progress?.maxItems || 10}
+          </span>
+        </div>
+
+        {/* Progress bar */}
+        <div className="w-full max-w-lg mb-3">
+          {progress?.sectionsTotal > 1 && (
+            <div className="flex gap-1 mb-1.5">
+              {Array.from({ length: progress.sectionsTotal }).map((_, i) => (
+                <div key={i} className="flex-1 h-1 rounded-full transition-all" style={{
+                  background: i < progress.sectionsCompleted ? '#059669' : i === progress.sectionsCompleted ? sectionColor : 'var(--border)',
+                }} />
+              ))}
+            </div>
+          )}
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+            <div className="h-full rounded-full transition-all duration-300" style={{
+              background: sectionColor,
+              width: `${((progress?.itemNumber || 1) / (progress?.maxItems || 10)) * 100}%`,
+            }} />
+          </div>
+        </div>
+
+        {/* Statement card */}
+        <div className="w-full max-w-lg bg-white rounded-2xl p-6 border border-stone-200 shadow-sm" key={item.itemId}>
+          <div className="text-lg font-bold text-stone-800 leading-relaxed mb-6 text-center" style={{ fontFamily: "'Playfair Display', serif" }}>
+            {isPers ? (item.statement || item.prompt || 'Rate this statement') : (item.activity || item.statement || item.prompt || 'Rate this activity')}
+          </div>
+
+          {isPers && <div className="text-xs text-stone-400 text-center mb-4">How much do you agree with this statement?</div>}
+          {!isPers && <div className="text-xs text-stone-400 text-center mb-4">How much would you enjoy this activity?</div>}
+
+          {/* Likert scale */}
+          <div className="flex gap-2 justify-center">
+            {labels.map(l => {
+              const selected = likertValue === l.value;
+              return (
+                <button key={l.value} onClick={() => !answered && handleLikert(l.value)}
+                  disabled={answered}
+                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all flex-1 max-w-[80px]"
+                  style={{
+                    borderColor: selected ? sectionColor : '#E7E5E4',
+                    background: selected ? `${sectionColor}15` : 'white',
+                    transform: selected ? 'scale(1.05)' : 'scale(1)',
+                  }}>
+                  <div className="text-xl font-bold" style={{ color: selected ? sectionColor : '#A8A29E' }}>{l.value}</div>
+                  <div className="text-[9px] font-semibold text-center leading-tight" style={{ color: selected ? sectionColor : '#78716C' }}>{l.label}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══ COGNITIVE TEST UI (original) ═══
   const letters = ['A', 'B', 'C', 'D'];
 
   return (

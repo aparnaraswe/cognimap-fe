@@ -1,14 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
 // ═══════════════════════════════════════════
 // UNIFIED SETUP & ASSIGN — One page, one flow
 // Step 1: Upload items (or skip if items exist)
-// Step 2: Pick/create battery
-// Step 3: Select students
-// Step 4: Assign → done
+// Step 2: Pick test type (Cognitive / Personality / Interest)
+// Step 3: Select students & assign
 // ═══════════════════════════════════════════
 
 const DOMAIN_LABELS = {
@@ -16,8 +14,13 @@ const DOMAIN_LABELS = {
   gc: 'Verbal Reasoning', gs: 'Processing Speed',
   personality: 'Personality', interest: 'Career Interest',
 };
-const DOMAIN_ICONS = { gf: '🧩', gv: '👁️', gq: '🔢', gc: '💬', gs: '⚡', personality: '💖', interest: '🧭' };
 const DOMAIN_COLORS = { gf: '#6366F1', gv: '#0891B2', gq: '#D97706', gc: '#059669', gs: '#DC2626', personality: '#EC4899', interest: '#F59E0B' };
+
+const TEST_TYPES = [
+  { key: 'cognitive', label: 'Cognitive Aptitude', description: 'Adaptive IRT-based assessment across 5 cognitive domains', icon: '🧠' },
+  { key: 'personality', label: 'Personality (Big Five)', description: 'Likert-scale personality trait assessment', icon: '💖' },
+  { key: 'interest', label: 'Career Interest (RIASEC)', description: 'Holland-type career interest inventory', icon: '🧭' },
+];
 
 export default function SetupAssignPage() {
   const [step, setStep] = useState(1);
@@ -29,11 +32,10 @@ export default function SetupAssignPage() {
   const [uploadResult, setUploadResult] = useState(null);
   const fileRef = useRef();
 
-  // Step 2 state — Battery
-  const [batteries, setBatteries] = useState([]);
-  const [selectedBattery, setSelectedBattery] = useState(null);
+  // Step 2 state — Test type
   const [itemStats, setItemStats] = useState(null);
-  const [loadingBatteries, setLoadingBatteries] = useState(true);
+  const [selectedType, setSelectedType] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   // Step 3 state — Students
   const [students, setStudents] = useState([]);
@@ -46,39 +48,35 @@ export default function SetupAssignPage() {
   const [assigning, setAssigning] = useState(false);
   const [assignResult, setAssignResult] = useState(null);
 
-  // Load batteries and students on mount
+  // Load item stats and students on mount
   const loadData = useCallback(async () => {
-    setLoadingBatteries(true);
+    setLoadingStats(true);
     try {
-      const [batData, stuData] = await Promise.all([
-        api.get('/batteries?status=active'),
+      const [statsData, stuData] = await Promise.all([
+        api.get('/items/stats'),
         api.get('/auth/users?role=student&limit=500'),
       ]);
-      setBatteries(batData.batteries || batData || []);
+      setItemStats(statsData);
       const stuList = stuData.users || stuData || [];
       setStudents(stuList);
     } catch (err) { console.error(err); }
-    setLoadingBatteries(false);
+    setLoadingStats(false);
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  const hasAnyItems = itemStats && (itemStats.cognitive.total > 0 || itemStats.personality.total > 0 || itemStats.interest.total > 0);
 
   // ── Step 1: Upload ──
   const handleUpload = async () => {
     if (!file) return;
     setUploading(true);
     try {
-      const result = await api.upload('/items/upload', file);
+      const result = await api.upload('/items/upload', file, { confirm: 'true' });
       setUploadResult(result);
-      // Refresh batteries since auto-create happened
-      const batData = await api.get('/batteries?status=active');
-      setBatteries(batData.batteries || batData || []);
-      // Auto-select the first battery if none selected
-      const bats = batData.batteries || batData || [];
-      if (bats.length > 0 && !selectedBattery) {
-        setSelectedBattery(bats[0].id);
-      }
-      // Auto-advance to step 2
+      // Refresh stats after upload
+      const statsData = await api.get('/items/stats');
+      setItemStats(statsData);
       setStep(2);
     } catch (err) {
       alert(err.message || 'Upload failed');
@@ -113,13 +111,13 @@ export default function SetupAssignPage() {
            (s.grade || '').toLowerCase().includes(q);
   });
 
-  // ── Step 4: Assign ──
+  // ── Step 3: Assign ──
   const handleAssign = async () => {
-    if (!selectedBattery || selectedStudents.size === 0) return;
+    if (!selectedType || selectedStudents.size === 0) return;
     setAssigning(true);
     try {
-      const result = await api.post('/sessions/assign', {
-        batteryId: selectedBattery,
+      const result = await api.post('/sessions/assign-by-type', {
+        testType: selectedType,
         userIds: [...selectedStudents],
         generateTokens,
       });
@@ -131,30 +129,30 @@ export default function SetupAssignPage() {
     setAssigning(false);
   };
 
-  const selectedBatteryObj = batteries.find(b => b.id === selectedBattery);
+  const selectedTypeObj = TEST_TYPES.find(t => t.key === selectedType);
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl mx-auto p-6">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-stone-800" style={{ fontFamily: "'Playfair Display', serif" }}>
           Setup & Assign
         </h1>
-        <p className="text-sm text-stone-500 mt-1">Upload items, pick a battery, select students — all in one go.</p>
+        <p className="text-sm text-stone-500 mt-1">Upload items, pick a test type, select students — all in one go.</p>
       </div>
 
       {/* Progress steps */}
       <div className="flex items-center gap-2 mb-8">
         {[
           { n: 1, label: 'Upload Items' },
-          { n: 2, label: 'Pick Battery' },
+          { n: 2, label: 'Pick Test Type' },
           { n: 3, label: 'Select Students' },
           { n: 4, label: 'Done' },
         ].map((s, i) => (
           <div key={s.n} className="flex items-center gap-2 flex-1">
             <button
-              onClick={() => s.n < step || (s.n <= 3 && step === 4) ? null : setStep(s.n)}
-              disabled={s.n > step && step !== 4}
+              onClick={() => s.n < step ? setStep(s.n) : null}
+              disabled={s.n > step}
               className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                 step === s.n ? 'text-white shadow-md' :
                 step > s.n ? 'text-white' :
@@ -175,8 +173,8 @@ export default function SetupAssignPage() {
           <Card>
             <h2 className="text-lg font-bold text-stone-800 mb-1">Upload Item Bank</h2>
             <p className="text-sm text-stone-500 mb-4">
-              Upload your Excel file with test items. Batteries will be auto-created from the domains found.
-              {batteries.length > 0 && <span className="text-green-600 font-semibold"> You already have {batteries.length} battery(ies) — you can skip this step.</span>}
+              Upload your Excel file with test items. Test types will be auto-detected from the domains found.
+              {hasAnyItems && <span className="text-green-600 font-semibold"> You already have items uploaded — you can skip this step.</span>}
             </p>
 
             <div className="border-2 border-dashed border-stone-200 rounded-2xl p-8 text-center hover:border-amber-300 transition-colors cursor-pointer"
@@ -200,20 +198,15 @@ export default function SetupAssignPage() {
             {uploadResult && (
               <div className="mt-4 p-4 rounded-xl bg-green-50 border border-green-200">
                 <div className="text-sm font-bold text-green-700">✓ Uploaded: {uploadResult.inserted} new + {uploadResult.updated} updated items</div>
-                {uploadResult.batteries?.length > 0 && (
-                  <div className="text-xs text-green-600 mt-1">
-                    Auto-created: {uploadResult.batteries.map(b => b.name).join(', ')}
-                  </div>
-                )}
               </div>
             )}
           </Card>
 
           <div className="flex gap-3">
-            {batteries.length > 0 && (
+            {hasAnyItems && (
               <button onClick={() => setStep(2)}
                 className="flex-1 px-4 py-3 rounded-xl border-2 border-stone-200 text-sm font-bold text-stone-600 hover:border-stone-300 transition-all">
-                Skip — use existing batteries →
+                Skip — use existing items →
               </button>
             )}
             <button onClick={handleUpload} disabled={!file || uploading}
@@ -225,35 +218,59 @@ export default function SetupAssignPage() {
         </div>
       )}
 
-      {/* ═══ STEP 2: Pick Battery ═══ */}
+      {/* ═══ STEP 2: Pick Test Type ═══ */}
       {step === 2 && (
         <div className="space-y-4">
           <Card>
-            <h2 className="text-lg font-bold text-stone-800 mb-1">Choose Battery</h2>
-            <p className="text-sm text-stone-500 mb-4">Select which test battery to assign to students.</p>
+            <h2 className="text-lg font-bold text-stone-800 mb-1">Choose Test Type</h2>
+            <p className="text-sm text-stone-500 mb-4">Select which type of assessment to assign to students.</p>
 
-            {loadingBatteries ? (
+            {loadingStats ? (
               <div className="text-sm text-stone-400 py-8 text-center">Loading…</div>
-            ) : batteries.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-3xl mb-2">📭</div>
-                <div className="text-sm text-stone-500">No batteries found. Go back and upload items first.</div>
-              </div>
             ) : (
-              <div className="space-y-2">
-                {batteries.map(b => {
-                  const isSelected = selectedBattery === b.id;
+              <div className="space-y-3">
+                {TEST_TYPES.map(tt => {
+                  const stats = itemStats?.[tt.key] || { total: 0, domains: {} };
+                  const isReady = stats.total > 0;
+                  const isSelected = selectedType === tt.key;
+                  const domains = Object.entries(stats.domains);
+
                   return (
-                    <button key={b.id} onClick={() => setSelectedBattery(b.id)}
-                      className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                        isSelected ? 'border-amber-500 bg-amber-50' : 'border-stone-200 hover:border-stone-300 bg-white'
+                    <button key={tt.key} onClick={() => isReady && setSelectedType(tt.key)}
+                      disabled={!isReady}
+                      className={`w-full text-left p-5 rounded-xl border-2 transition-all ${
+                        !isReady ? 'border-stone-100 bg-stone-50 opacity-60 cursor-not-allowed' :
+                        isSelected ? 'border-amber-500 bg-amber-50 shadow-sm' :
+                        'border-stone-200 hover:border-stone-300 bg-white cursor-pointer'
                       }`}>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm font-bold text-stone-800">{b.name}</div>
-                          <div className="text-xs text-stone-400 mt-0.5">{b.description || 'No description'}</div>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xl">{tt.icon}</span>
+                            <span className="text-sm font-bold text-stone-800">{tt.label}</span>
+                            {isReady ? (
+                              <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                                {stats.total} items
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">
+                                No items
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-stone-500 mb-2">{tt.description}</div>
+                          {domains.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {domains.map(([d, count]) => (
+                                <span key={d} className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white"
+                                  style={{ background: DOMAIN_COLORS[d] || '#6B7280' }}>
+                                  {DOMAIN_LABELS[d] || d}: {count}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 transition-all ${
                           isSelected ? 'border-amber-500 bg-amber-500' : 'border-stone-300'
                         }`}>
                           {isSelected && <span className="text-white text-xs">✓</span>}
@@ -270,7 +287,7 @@ export default function SetupAssignPage() {
             <button onClick={() => setStep(1)} className="px-4 py-3 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600">
               ← Back
             </button>
-            <button onClick={() => setStep(3)} disabled={!selectedBattery}
+            <button onClick={() => setStep(3)} disabled={!selectedType}
               className="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-40 transition-all"
               style={{ background: 'linear-gradient(135deg, #B45309, #D97706)' }}>
               Select Students →
@@ -287,7 +304,7 @@ export default function SetupAssignPage() {
               <div>
                 <h2 className="text-lg font-bold text-stone-800">Select Students</h2>
                 <p className="text-xs text-stone-500 mt-0.5">
-                  Assigning: <span className="font-bold text-amber-700">{selectedBatteryObj?.name}</span>
+                  Assigning: <span className="font-bold text-amber-700">{selectedTypeObj?.icon} {selectedTypeObj?.label}</span>
                   {selectedStudents.size > 0 && <span className="text-green-600 font-bold"> • {selectedStudents.size} selected</span>}
                 </p>
               </div>
@@ -379,7 +396,7 @@ export default function SetupAssignPage() {
             </h2>
             <p className="text-sm text-stone-500 mb-6">
               <span className="font-bold text-green-600">{assignResult.sessions?.length || 0}</span> students can now take the
-              <span className="font-bold text-amber-700"> {selectedBatteryObj?.name}</span> assessment.
+              <span className="font-bold text-amber-700"> {selectedTypeObj?.icon} {selectedTypeObj?.label}</span> assessment.
             </p>
 
             {/* Tokens */}
@@ -398,7 +415,7 @@ export default function SetupAssignPage() {
             )}
 
             <div className="flex gap-3 justify-center">
-              <button onClick={() => { setStep(1); setFile(null); setUploadResult(null); setSelectedStudents(new Set()); setAssignResult(null); }}
+              <button onClick={() => { setStep(1); setFile(null); setUploadResult(null); setSelectedType(null); setSelectedStudents(new Set()); setAssignResult(null); }}
                 className="px-5 py-3 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50">
                 Assign Another
               </button>

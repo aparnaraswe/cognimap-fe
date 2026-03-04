@@ -17,13 +17,14 @@ class ApiClient {
   }
 
   async request(method, path, body = null) {
+    console.log("888888888888888888888888888")
     const headers = { 'Content-Type': 'application/json' };
     const token = this.getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const opts = { method, headers };
     if (body && method !== 'GET') opts.body = JSON.stringify(body);
-
+    console.log('00000', `${API_BASE}${path}`)
     const res = await fetch(`${API_BASE}${path}`, opts);
     
     if (res.status === 204) return null;
