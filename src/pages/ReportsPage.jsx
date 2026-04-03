@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FileText, Send, Eye, Check, Download, Users, Brain, Heart, Compass, Briefcase, Filter, RefreshCw } from 'lucide-react';
+import { FileText, Send, Eye, Check, Download, Users, Brain, Heart, Compass, Briefcase, Filter, RefreshCw, Shield } from 'lucide-react';
 import api from '../utils/api';
+import ReportAccessModal from '../components/ReportAccessModal';
 
 const TYPE_META = {
   aptitude:    { icon: Brain,     label: 'Aptitude',    color: '#6366F1', bg: '#EEF2FF' },
@@ -24,6 +25,7 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ status: '', reportType: '' });
   const [shareModal, setShareModal] = useState(null);
+  const [accessModal, setAccessModal] = useState(null);
   const [compileModal, setCompileModal] = useState(null);
   const [students, setStudents] = useState([]);
   const [completedSessions, setCompletedSessions] = useState([]);
@@ -210,6 +212,10 @@ export default function ReportsPage() {
                           className="p-2 rounded-lg hover:bg-blue-50 text-stone-500 hover:text-blue-600" title="Share">
                           <Send size={14} />
                         </button>
+                        <button onClick={() => setAccessModal(r)}
+                          className="p-2 rounded-lg hover:bg-purple-50 text-stone-500 hover:text-purple-600" title="Report Access">
+                          <Shield size={14} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -222,6 +228,15 @@ export default function ReportsPage() {
 
       {/* Share Modal */}
       {shareModal && <ShareModal report={shareModal} onShare={shareReport} onClose={() => setShareModal(null)} />}
+
+      {/* Report Access Modal */}
+      {accessModal && (
+        <ReportAccessModal
+          reportId={accessModal.id}
+          studentId={accessModal.user_id}
+          onClose={() => setAccessModal(null)}
+        />
+      )}
 
       {/* Compile Career Report Modal */}
       {compileModal && <CompileModal students={students} onCompile={compileCareer} onClose={() => setCompileModal(null)} />}

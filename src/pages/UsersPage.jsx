@@ -5,6 +5,8 @@ import api from '../utils/api';
 const ROLES = [
   { value: 'student', label: 'Student' },
   { value: 'employee', label: 'Employee' },
+  { value: 'guardian', label: 'Guardian' },
+  { value: 'teacher', label: 'Teacher' },
   { value: 'psychologist', label: 'Psychologist' },
   { value: 'client_admin', label: 'Client Admin' },
   { value: 'super_admin', label: 'Super Admin' },

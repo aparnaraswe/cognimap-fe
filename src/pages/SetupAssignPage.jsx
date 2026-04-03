@@ -73,11 +73,18 @@ export default function SetupAssignPage() {
     setUploading(true);
     try {
       const result = await api.upload('/items/upload', file, { confirm: 'true' });
+      console.log('Upload result:', result);
       setUploadResult(result);
+      
       // Refresh stats after upload
       const statsData = await api.get('/items/stats');
       setItemStats(statsData);
-      setStep(2);
+      
+      // Only auto-navigate to step 2 if no items were skipped
+      if (!result.skippedItems || result.skippedItems.length === 0) {
+        setStep(2);
+      }
+      // If there are missing tokens, stay on step 1 so user can review
     } catch (err) {
       alert(err.message || 'Upload failed');
     }
@@ -196,24 +203,111 @@ export default function SetupAssignPage() {
             </div>
 
             {uploadResult && (
-              <div className="mt-4 p-4 rounded-xl bg-green-50 border border-green-200">
-                <div className="text-sm font-bold text-green-700">✓ Uploaded: {uploadResult.inserted} new + {uploadResult.updated} updated items</div>
+              <div className="mt-4 space-y-3">
+                <div className="p-4 rounded-xl bg-green-50 border border-green-200">
+                  <div className="text-sm font-bold text-green-700">
+                    ✓ Uploaded: {uploadResult.inserted} new + {uploadResult.updated} updated items
+                    {uploadResult.skipped > 0 && (
+                      <span className="ml-2 text-amber-600">· {uploadResult.skipped} skipped</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Skipped items — unified error panel with smart Fix button */}
+                {uploadResult.skippedItems && uploadResult.skippedItems.length > 0 && (
+                  <div className="rounded-xl bg-red-50 border border-red-300 overflow-hidden">
+                    <div className="bg-red-600 px-4 py-2.5 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-white font-bold text-sm">
+                          ⚠️ {uploadResult.skippedItems.length} item{uploadResult.skippedItems.length !== 1 ? 's' : ''} not uploaded — missing shapes
+                        </div>
+                        <div className="text-red-100 text-xs mt-0.5">
+                          Click <strong>Fix Missing Shapes</strong> to add them right now — no developer needed
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => navigate('/admin/tokens', {
+                          state: { fromUpload: true, skippedItems: uploadResult.skippedItems }
+                        })}
+                        className="shrink-0 px-4 py-2 bg-white text-red-600 rounded-lg text-xs font-bold hover:bg-red-50 transition-colors shadow">
+                        🔧 Fix Missing Shapes →
+                      </button>
+                    </div>
+
+                    {/* Token error table */}
+                    <div className="max-h-56 overflow-y-auto">
+                      <table className="w-full text-xs">
+                        <thead className="bg-red-100 sticky top-0">
+                          <tr>
+                            <th className="px-3 py-1.5 text-left font-bold text-red-800">Item ID</th>
+                            <th className="px-3 py-1.5 text-left font-bold text-red-800">Row</th>
+                            <th className="px-3 py-1.5 text-left font-bold text-red-800">Missing Token(s)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-red-200">
+                          {uploadResult.skippedItems.map((item, i) => (
+                            <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-red-50/50'}>
+                              <td className="px-3 py-1.5 font-mono font-bold text-gray-800">{item.itemId}</td>
+                              <td className="px-3 py-1.5 text-gray-500 font-mono">{item.excelRow ? `row ${item.excelRow}` : '—'}</td>
+                              <td className="px-3 py-1.5">
+                                <div className="flex flex-wrap gap-1">
+                                  {item.unresolvedTokens?.map((t, j) => (
+                                    <button
+                                      key={j}
+                                      onClick={() => navigate('/admin/tokens', {
+                                        state: { fromUpload: true, skippedItems: uploadResult.skippedItems, focusToken: t.token }
+                                      })}
+                                      className="bg-red-100 hover:bg-red-200 text-red-700 rounded px-1.5 py-0.5 font-mono text-[10px] font-bold transition-colors cursor-pointer"
+                                      title="Click to fix this token"
+                                    >
+                                      {t.token} →
+                                    </button>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="bg-red-100 px-3 py-1.5 text-[10px] text-red-700 border-t border-red-200">
+                      Click any token above to jump straight to fixing it in Token Manager
+                    </div>
+                  </div>
+                )}
               </div>
             )}
+
           </Card>
 
           <div className="flex gap-3">
-            {hasAnyItems && (
+            {hasAnyItems && !uploadResult && (
               <button onClick={() => setStep(2)}
                 className="flex-1 px-4 py-3 rounded-xl border-2 border-stone-200 text-sm font-bold text-stone-600 hover:border-stone-300 transition-all">
                 Skip — use existing items →
               </button>
             )}
-            <button onClick={handleUpload} disabled={!file || uploading}
-              className="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-40 transition-all"
-              style={{ background: 'linear-gradient(135deg, #B45309, #D97706)' }}>
-              {uploading ? 'Uploading…' : 'Upload & Continue →'}
-            </button>
+            
+            {/* Show "Continue Anyway" button if upload succeeded with missing tokens */}
+            {uploadResult && uploadResult.skippedItems && uploadResult.skippedItems.length > 0 ? (
+              <button onClick={() => setStep(2)}
+                className="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all"
+                style={{ background: 'linear-gradient(135deg, #DC2626, #EF4444)' }}>
+                ⚠️ Continue Anyway (Some Items Missing) →
+              </button>
+            ) : uploadResult ? (
+              <button onClick={() => setStep(2)}
+                className="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all"
+                style={{ background: 'linear-gradient(135deg, #059669, #10B981)' }}>
+                ✓ Continue to Test Selection →
+              </button>
+            ) : (
+              <button onClick={handleUpload} disabled={!file || uploading}
+                className="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-40 transition-all"
+                style={{ background: 'linear-gradient(135deg, #B45309, #D97706)' }}>
+                {uploading ? 'Uploading…' : 'Upload & Continue →'}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -261,10 +355,10 @@ export default function SetupAssignPage() {
                           <div className="text-xs text-stone-500 mb-2">{tt.description}</div>
                           {domains.length > 0 && (
                             <div className="flex flex-wrap gap-1.5">
-                              {domains.map(([d, count]) => (
+                              {domains.map(([d, domainStats]) => (
                                 <span key={d} className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white"
                                   style={{ background: DOMAIN_COLORS[d] || '#6B7280' }}>
-                                  {DOMAIN_LABELS[d] || d}: {count}
+                                  {DOMAIN_LABELS[d] || d}: {domainStats.count}
                                 </span>
                               ))}
                             </div>

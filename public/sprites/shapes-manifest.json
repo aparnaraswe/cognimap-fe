@@ -1,0 +1,252 @@
+{
+  "version": 1,
+  "_howto": [
+    "Sprite sheet: /public/sprites/shapes.png (640x640, 64x64 tiles, 10 cols x 10 rows)",
+    "To add a sprite: paint a new 64x64 tile onto shapes.png, then add an entry here.",
+    "Lookup order: exact → without size suffix → progressive prefix (e.g. hourglass_striped_cross → hourglass_striped → hourglass)"
+  ],
+  "sheets": {
+    "shapes": {
+      "file": "/sprites/shapes.png",
+      "width": 640,
+      "height": 640,
+      "spriteW": 64,
+      "spriteH": 64
+    }
+  },
+  "tokens": {
+    "hourglass": {
+      "sheet": "shapes",
+      "col": 0,
+      "row": 0
+    },
+    "hourglass_striped": {
+      "sheet": "shapes",
+      "col": 1,
+      "row": 0
+    },
+    "hourglass_dot_top": {
+      "sheet": "shapes",
+      "col": 2,
+      "row": 0
+    },
+    "hourglass_dot_bottom": {
+      "sheet": "shapes",
+      "col": 3,
+      "row": 0
+    },
+    "wavy": {
+      "sheet": "shapes",
+      "col": 0,
+      "row": 1
+    },
+    "wavy_circle": {
+      "sheet": "shapes",
+      "col": 1,
+      "row": 1
+    },
+    "wavy_square": {
+      "sheet": "shapes",
+      "col": 2,
+      "row": 1
+    },
+    "wavy_line": {
+      "sheet": "shapes",
+      "col": 3,
+      "row": 1
+    },
+    "wavy_dashed": {
+      "sheet": "shapes",
+      "col": 4,
+      "row": 1
+    },
+    "moon": {
+      "sheet": "shapes",
+      "col": 0,
+      "row": 2
+    },
+    "crescent": {
+      "sheet": "shapes",
+      "col": 1,
+      "row": 2
+    },
+    "crescent_hollow": {
+      "sheet": "shapes",
+      "col": 2,
+      "row": 2
+    },
+    "nested_circles": {
+      "sheet": "shapes",
+      "col": 0,
+      "row": 3
+    },
+    "nested_squares": {
+      "sheet": "shapes",
+      "col": 1,
+      "row": 3
+    },
+    "nested_triangles": {
+      "sheet": "shapes",
+      "col": 2,
+      "row": 3
+    },
+    "nested_triangle_outer_striped": {
+      "sheet": "shapes",
+      "col": 3,
+      "row": 3
+    },
+    "nested_triangle_inner_striped": {
+      "sheet": "shapes",
+      "col": 4,
+      "row": 3
+    },
+    "inner_square": {
+      "sheet": "shapes",
+      "col": 0,
+      "row": 4
+    },
+    "inner_square_lg": {
+      "sheet": "shapes",
+      "col": 1,
+      "row": 4
+    },
+    "inner_square_rotated": {
+      "sheet": "shapes",
+      "col": 2,
+      "row": 4
+    },
+    "rectangle_inner_square": {
+      "sheet": "shapes",
+      "col": 3,
+      "row": 4
+    },
+    "star_ring": {
+      "sheet": "shapes",
+      "col": 0,
+      "row": 5
+    },
+    "star_4ring": {
+      "sheet": "shapes",
+      "col": 1,
+      "row": 5
+    },
+    "star_ring2dashed": {
+      "sheet": "shapes",
+      "col": 2,
+      "row": 5
+    },
+    "diamond_dot1": {
+      "sheet": "shapes",
+      "col": 0,
+      "row": 6
+    },
+    "diamond_dot2": {
+      "sheet": "shapes",
+      "col": 1,
+      "row": 6
+    },
+    "square_striped": {
+      "sheet": "shapes",
+      "col": 0,
+      "row": 7
+    },
+    "square_striped_border": {
+      "sheet": "shapes",
+      "col": 1,
+      "row": 7
+    },
+    "circle_shaded": {
+      "sheet": "shapes",
+      "col": 2,
+      "row": 7
+    },
+    "circle_line": {
+      "sheet": "shapes",
+      "col": 3,
+      "row": 7
+    },
+    "square_dot2": {
+      "sheet": "shapes",
+      "col": 4,
+      "row": 7
+    },
+    "arrow_shaded": {
+      "sheet": "shapes",
+      "col": 0,
+      "row": 8
+    },
+    "arrow_shaded_up": {
+      "sheet": "shapes",
+      "col": 1,
+      "row": 8
+    },
+    "arrow_shaded_upper_right": {
+      "sheet": "shapes",
+      "col": 2,
+      "row": 8
+    },
+    "img_spatial_sequence_movement": {
+      "file": "/sprites/custom/img_spatial_sequence_movement.png"
+    },
+    "spatial_sequence_movement_pattern": {
+      "file": "/sprites/custom/spatial_sequence_movement_pattern.png"
+    },
+    "reflection__horizontal_reflection": {
+      "file": "/sprites/custom/reflection__horizontal_reflection.png"
+    },
+    "reflection_horizontal_reflection": {
+      "file": "/sprites/custom/reflection_horizontal_reflection.png"
+    },
+    "reflection_vertical_reflection": {
+      "file": "/sprites/custom/reflection_vertical_reflection.png"
+    },
+    "reflection_line_symmetry": {
+      "file": "/sprites/custom/reflection_line_symmetry.png"
+    },
+    "reflection_fold_symmetry": {
+      "file": "/sprites/custom/reflection_fold_symmetry.png"
+    },
+    "embedded_figures_figure_ground": {
+      "file": "/sprites/custom/embedded_figures_figure_ground.png"
+    },
+    "embedded_figures_contour_tracing": {
+      "file": "/sprites/custom/embedded_figures_contour_tracing.png"
+    },
+    "embedded_figures_overlapping_shapes": {
+      "file": "/sprites/custom/embedded_figures_overlapping_shapes.png"
+    },
+    "spatial_sequence_path_tracking": {
+      "file": "/sprites/custom/spatial_sequence_path_tracking.png"
+    },
+    "spatial_sequence_direction_sequence": {
+      "file": "/sprites/custom/spatial_sequence_direction_sequence.png"
+    },
+    "visual_matching_attribute_match": {
+      "file": "/sprites/custom/visual_matching_attribute_match.png"
+    },
+    "visual_matching_exact_match": {
+      "file": "/sprites/custom/visual_matching_exact_match.png"
+    },
+    "visual_matching_pattern_match": {
+      "file": "/sprites/custom/visual_matching_pattern_match.png"
+    },
+    "spatial_relations_relative_position": {
+      "file": "/sprites/custom/spatial_relations_relative_position.png"
+    },
+    "spatial_relations_position_identification": {
+      "file": "/sprites/custom/spatial_relations_position_identification.png"
+    },
+    "spatial_relations_grid_navigation": {
+      "file": "/sprites/custom/spatial_relations_grid_navigation.png"
+    },
+    "spatial_assembly_rotation_assembly": {
+      "file": "/sprites/custom/spatial_assembly_rotation_assembly.png"
+    },
+    "spatial_assembly_piece_fitting": {
+      "file": "/sprites/custom/spatial_assembly_piece_fitting.png"
+    },
+    "spatial_assembly_part_whole": {
+      "file": "/sprites/custom/spatial_assembly_part_whole.png"
+    }
+  }
+}

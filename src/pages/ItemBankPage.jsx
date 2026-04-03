@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 
-const DOMAINS = ['gf','gv','gq','gc','gs','personality','interest'];
-const DOMAIN_LABELS = { gf:'Fluid Reasoning', gv:'Visual Spatial', gq:'Quantitative', gc:'Verbal', gs:'Processing Speed', personality:'Personality', interest:'Interest' };
+const DOMAINS = ['gf','gv','gq','gc','gs','gwm','personality','interest'];
+const DOMAIN_LABELS = { gf:'Fluid Reasoning', gv:'Visual Spatial', gq:'Quantitative', gc:'Verbal', gs:'Processing Speed', gwm:'Working Memory', personality:'Personality', interest:'Interest' };
 
 export default function ItemBankPage() {
   const [items, setItems] = useState([]);

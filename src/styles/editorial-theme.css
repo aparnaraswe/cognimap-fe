@@ -1,0 +1,222 @@
+/* ══════════════════════════════════════════════════════════════
+   CogniMap — Dark Editorial Theme
+   Based on "What's Your Direction?" reference design.
+   Playfair Display + Special Elite + Caveat
+   ══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Special+Elite&family=Caveat:wght@400;600;700&display=swap');
+
+:root {
+  --ed-dark: #f5f0e8;
+  --ed-dark2: #ebe5d8;
+  --ed-dark3: #ddd6c8;
+  --ed-paper: #f5f0e8;
+  --ed-paper2: #ede8dc;
+  --ed-cream: #faf7f0;
+  --ed-ink: #2c2418;
+  --ed-ink2: #3a3228;
+  --ed-pencil: #7a7068;
+  --ed-faint: #c8c0b0;
+  --ed-rule: rgba(180,170,155,0.55);
+  --ed-margin: rgba(178,65,60,0.22);
+  --ed-hi: #fef9d0;
+  --ed-red: #b8413c;
+  --ed-shadow: rgba(16,13,10,0.18);
+  --ed-font-heading: 'Playfair Display', serif;
+  --ed-font-body: 'Special Elite', cursive;
+  --ed-font-hand: 'Caveat', cursive;
+}
+
+/* ── Grain texture overlay ── */
+.ed-grain::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: 0.3;
+  mix-blend-mode: multiply;
+}
+
+/* ── Warm body ── */
+.ed-dark-body {
+  background: var(--ed-dark);
+  color: var(--ed-ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Paper section with ruled lines + margin ── */
+.ed-paper-bg {
+  background-color: var(--ed-paper);
+  background-image:
+    linear-gradient(90deg, transparent 78px, var(--ed-margin) 78px, var(--ed-margin) 80px, transparent 80px),
+    repeating-linear-gradient(transparent 0, transparent 31px, var(--ed-rule) 31px, var(--ed-rule) 32px);
+  color: var(--ed-ink);
+}
+@media (max-width: 600px) {
+  .ed-paper-bg {
+    background-image:
+      linear-gradient(90deg, transparent 28px, var(--ed-margin) 28px, var(--ed-margin) 30px, transparent 30px),
+      repeating-linear-gradient(transparent 0, transparent 31px, var(--ed-rule) 31px, var(--ed-rule) 32px);
+  }
+}
+
+/* ── Torn edge (dark-to-paper transition) ── */
+.ed-torn-top {
+  position: relative;
+}
+.ed-torn-top::before {
+  content: '';
+  position: absolute; top: -8px; left: 0; right: 0; height: 16px;
+  background: var(--ed-dark2);
+  clip-path: polygon(
+    0% 100%,1% 20%,2% 80%,4% 10%,6% 70%,8% 30%,10% 85%,12% 25%,14% 65%,16% 5%,
+    18% 60%,20% 35%,22% 78%,24% 18%,26% 55%,28% 88%,30% 22%,32% 68%,34% 42%,36% 82%,
+    38% 12%,40% 58%,42% 28%,44% 72%,46% 48%,48% 90%,50% 20%,52% 65%,54% 38%,56% 80%,
+    58% 10%,60% 55%,62% 30%,64% 70%,66% 15%,68% 60%,70% 45%,72% 85%,74% 25%,76% 75%,
+    78% 50%,80% 95%,82% 18%,84% 62%,86% 35%,88% 78%,90% 8%,92% 52%,94% 28%,96% 68%,
+    98% 42%,100% 100%
+  );
+  z-index: 2; pointer-events: none;
+}
+.ed-torn-bottom {
+  position: relative;
+}
+.ed-torn-bottom::after {
+  content: '';
+  position: absolute; bottom: -8px; left: 0; right: 0; height: 16px;
+  background: var(--ed-dark2);
+  clip-path: polygon(
+    0% 0%,1% 70%,3% 10%,5% 55%,7% 30%,9% 75%,11% 5%,13% 60%,15% 35%,17% 80%,
+    19% 15%,21% 50%,23% 85%,25% 25%,27% 65%,29% 40%,31% 78%,33% 12%,35% 55%,
+    37% 28%,39% 70%,41% 45%,43% 88%,45% 18%,47% 62%,49% 38%,51% 80%,53% 8%,
+    55% 52%,57% 30%,59% 72%,61% 48%,63% 90%,65% 20%,67% 65%,69% 35%,71% 78%,
+    73% 15%,75% 58%,77% 42%,79% 82%,81% 22%,83% 68%,85% 32%,87% 75%,89% 12%,
+    91% 55%,93% 30%,95% 72%,97% 40%,99% 82%,100% 0%
+  );
+  z-index: 2; pointer-events: none;
+}
+
+/* ── Sketch card (corner brackets) ── */
+.ed-sketch-card {
+  position: relative;
+  border: 1.5px solid var(--ed-ink);
+  background: var(--ed-cream);
+  transition: transform 0.22s, box-shadow 0.22s, background 0.15s;
+  cursor: pointer;
+  overflow: visible;
+}
+.ed-sketch-card::before,
+.ed-sketch-card::after {
+  content: '';
+  position: absolute;
+  width: 12px; height: 12px;
+  border-color: var(--ed-pencil);
+  border-style: solid;
+  transition: 0.3s;
+}
+.ed-sketch-card::before { top: 5px; left: 5px; border-width: 1.5px 0 0 1.5px; }
+.ed-sketch-card::after { bottom: 5px; right: 5px; border-width: 0 1.5px 1.5px 0; }
+.ed-sketch-card:hover {
+  background: var(--ed-hi);
+  transform: translate(-2px, -3px);
+  box-shadow: 4px 5px 0 var(--ed-ink);
+}
+.ed-sketch-card:hover::before { top: 3px; left: 3px; }
+.ed-sketch-card:hover::after { bottom: 3px; right: 3px; }
+
+/* ── Editorial button ── */
+.ed-btn {
+  background: var(--ed-ink);
+  color: var(--ed-paper);
+  border: 1.5px solid var(--ed-ink);
+  border-radius: 1px;
+  padding: 12px 28px;
+  font-family: var(--ed-font-body);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: 0.2s;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+}
+.ed-btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--ed-hi);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.ed-btn:hover::after { opacity: 0.15; }
+.ed-btn:hover { box-shadow: 3px 3px 0 var(--ed-dark3); }
+
+.ed-btn-outline {
+  background: transparent;
+  color: var(--ed-pencil);
+  border: 1px solid var(--ed-faint);
+  border-radius: 1px;
+  padding: 10px 24px;
+  font-family: var(--ed-font-body);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: 0.2s;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.ed-btn-outline:hover {
+  border-color: var(--ed-ink);
+  color: var(--ed-ink);
+}
+
+/* ── Scrollbar ── */
+.ed-dark-body::-webkit-scrollbar { width: 6px; }
+.ed-dark-body::-webkit-scrollbar-track { background: var(--ed-dark2); }
+.ed-dark-body::-webkit-scrollbar-thumb { background: #3a3228; border-radius: 3px; }
+
+/* ── Chapter divider ── */
+.ed-divider {
+  background: var(--ed-dark);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow: hidden;
+}
+.ed-divider-line {
+  flex: 1;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, #1e1b18 0, #1e1b18 3px, transparent 3px, transparent 9px);
+}
+.ed-divider-text {
+  font-family: var(--ed-font-hand);
+  font-size: 0.75rem;
+  color: #2e2a26;
+  padding: 20px 28px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Annotation (handwritten red note) ── */
+.ed-annotation {
+  display: inline-block;
+  font-family: var(--ed-font-hand);
+  font-size: 1.05rem;
+  color: var(--ed-red);
+  transform: rotate(-1.5deg);
+  position: relative;
+}
+.ed-annotation::after {
+  content: '';
+  position: absolute; bottom: -3px; left: 0; right: 0; height: 2px;
+  background: var(--ed-red);
+  border-radius: 1px;
+}
+
+/* ── Keyframes ── */
+@keyframes ed-fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+@keyframes ed-fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes ed-slideRight { from { opacity:0; transform:translateX(-16px); } to { opacity:1; transform:translateX(0); } }
+@keyframes ed-lineUp { to { transform:translateY(0); } }
+@keyframes ed-drawLine { to { stroke-dashoffset:0; } }
+@keyframes ed-blink { 0%,100% { opacity:1; } 50% { opacity:0.2; } }
+@keyframes ed-stampIn { from { transform:rotate(-2deg) scale(2); opacity:0; } to { transform:rotate(-2deg) scale(1); opacity:1; } }

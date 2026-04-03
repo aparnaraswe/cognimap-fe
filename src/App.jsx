@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AdminLayout, StudentLayout } from './components/Layout';
+import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ItemBankPage from './pages/ItemBankPage';
@@ -15,8 +16,14 @@ import UsersPage from './pages/UsersPage';
 import AuditPage from './pages/AuditPage';
 import SettingsPage from './pages/SettingsPage';
 import AccessControlPage from './pages/AccessControlPage';
+import TokenManagerPage from './pages/TokenManagerPage';
+import ShapeLibraryPage from './pages/ShapeLibraryPage';
+import DomainInstructionsPage from './pages/DomainInstructionsPage';
 import StudentDashboard from './pages/StudentDashboard';
+import GuardianDashboard from './pages/GuardianDashboard';
+import GuardianAssignPage from './pages/GuardianAssignPage';
 import TestRunner from './pages/TestRunner';
+import TestComplete from './pages/TestComplete';
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
@@ -40,14 +47,16 @@ function RoleRedirect() {
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
   if (['super_admin','psychologist','client_admin'].includes(user.role)) return <Navigate to="/admin" replace />;
+  if (['guardian','teacher'].includes(user.role)) return <Navigate to="/guardian" replace />;
   return <Navigate to="/student" replace />;
 }
 
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<RoleRedirect />} />
+      <Route path="/home" element={<RoleRedirect />} />
 
       {/* Admin routes */}
       <Route path="/admin" element={
@@ -65,9 +74,23 @@ function AppRoutes() {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="reports/:id" element={<ReportViewPage />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="tokens" element={<TokenManagerPage />} />
+        <Route path="shapes" element={<ShapeLibraryPage />} />
         <Route path="audit" element={<AuditPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="access-control" element={<AccessControlPage />} />
+        <Route path="domain-instructions" element={<DomainInstructionsPage />} />
+        <Route path="guardian-assign" element={<GuardianAssignPage />} />
+      </Route>
+
+      {/* Guardian/Teacher routes */}
+      <Route path="/guardian" element={
+        <ProtectedRoute allowedRoles={['guardian','teacher']}>
+          <StudentLayout />
+        </ProtectedRoute>
+      }>
+        <Route index element={<GuardianDashboard />} />
+        <Route path="reports/:id" element={<ReportViewPage />} />
       </Route>
 
       {/* Student routes */}
@@ -87,7 +110,15 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
 
+      {/* Test complete page */}
+      <Route path="/test/:sessionId/complete" element={
+        <ProtectedRoute>
+          <TestComplete />
+        </ProtectedRoute>
+      } />
+
       <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Landing page handles auto-redirect for logged-in users */}
     </Routes>
   );
 }

@@ -25,10 +25,25 @@
 
 html { scroll-behavior: smooth; }
 
+/* Paper & Ink theme variables (used by TestRunner + StudentDashboard) */
+:root {
+  --color-background-primary:   #FBF6EE;
+  --color-background-secondary: #F5EFE3;
+  --color-background-tertiary:  #F0E9D8;
+  --color-border-tertiary:      rgba(0,0,0,0.07);
+  --color-border-secondary:     rgba(0,0,0,0.12);
+  --color-text-primary:         #1A1A1A;
+  --color-text-secondary:       #4A4A4A;
+  --color-text-tertiary:        #999999;
+  --border-radius-md:           6px;
+  --border-radius-lg:           10px;
+  --border-radius-xl:           14px;
+}
+
 body {
   font-family: 'Source Sans 3', system-ui, sans-serif;
   color: var(--ink);
-  background: var(--bg);
+  background: #FBF6EE;
   min-height: 100vh;
 }
 

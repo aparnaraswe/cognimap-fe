@@ -150,10 +150,10 @@ export default function SessionAssignPage() {
                   <div className="flex-1">
                     <div className="text-sm font-bold text-stone-800">{tt.label}</div>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {domains.map(([d, count]) => (
+                      {domains.map(([d, domainStats]) => (
                         <span key={d} className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full text-white"
                           style={{ background: DOMAIN_COLORS[d] || '#6B7280' }}>
-                          {DOMAIN_LABELS[d] || d}: {count}
+                          {DOMAIN_LABELS[d] || d}: {domainStats.count}
                         </span>
                       ))}
                       {!isReady && <span className="text-[10px] text-stone-400">No items uploaded</span>}

@@ -1,8 +1,8 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { 
-  LayoutDashboard, Database, Layers, Users, Play, FileText, 
-  Shield, Settings, Activity, LogOut, Brain, ChevronRight, Upload
+import {
+  LayoutDashboard, Database, Layers, Users, Play, FileText,
+  Shield, Settings, Activity, LogOut, Brain, ChevronRight, Upload, Shapes, Image, BookOpen
 } from 'lucide-react';
 
 function AdminLayout() {
@@ -18,6 +18,10 @@ function AdminLayout() {
     { to: '/admin/sessions', icon: Play, label: 'Sessions', roles: ['super_admin', 'psychologist', 'client_admin'] },
     { to: '/admin/reports', icon: FileText, label: 'Reports', roles: ['super_admin', 'psychologist', 'client_admin'] },
     { to: '/admin/users', icon: Users, label: 'Users', roles: ['super_admin', 'client_admin'] },
+    { to: '/admin/guardian-assign', icon: Shield, label: 'Guardian Assign', roles: ['super_admin', 'client_admin'] },
+    { to: '/admin/tokens', icon: Shapes, label: 'Token Manager', roles: ['super_admin', 'psychologist'] },
+    { to: '/admin/shapes', icon: Image, label: 'Shape Library', roles: ['super_admin', 'psychologist'] },
+    { to: '/admin/domain-instructions', icon: BookOpen, label: 'Domain Instructions', roles: ['super_admin', 'psychologist'] },
     { to: '/admin/audit', icon: Activity, label: 'Audit Log', roles: ['super_admin'] },
     { to: '/admin/settings', icon: Settings, label: 'Settings', roles: ['super_admin'] },
     { to: '/admin/access-control', icon: Shield, label: 'Access Control', roles: ['super_admin'] },
@@ -99,34 +103,9 @@ function AdminLayout() {
 }
 
 function StudentLayout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
-      <header className="border-b px-6 py-3.5 flex items-center justify-between no-print"
-        style={{ borderColor: 'var(--border)', background: 'white' }}>
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/student')}>
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #B45309, #D97706)' }}>
-            🧠
-          </div>
-          <span className="text-display font-bold text-[15px]" style={{ color: 'var(--ink)' }}>My Assessments</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-semibold" style={{ color: 'var(--ink-soft)' }}>
-            {user?.first_name} {user?.last_name}
-          </span>
-          <button onClick={() => { logout(); navigate('/login'); }}
-            className="text-xs font-semibold transition-colors hover:text-red-600"
-            style={{ color: 'var(--ink-dim)' }}>
-            Sign Out
-          </button>
-        </div>
-      </header>
-      <main className="flex-1">
-        <Outlet />
-      </main>
+    <div style={{ minHeight: '100vh', background: '#0d0d2b' }}>
+      <Outlet />
     </div>
   );
 }
