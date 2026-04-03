@@ -1569,164 +1569,350 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
     const isGwmPractice = domain === 'gwm' && !!dbPracticeItem;
     const gwmLocked     = isGwmPractice && !gwmRevealDone;
 
-    return (
-      <Shell>
-        <div className="cg-split">
-          {/* Left: Question + stimulus */}
-          <div className="cg-left" style={{ background: '#F3F0FB', borderRight: '1px solid rgba(100,72,168,0.11)', padding: '34px 30px' }}>
-            <span className="cg-pill" style={{ background: bg, color: dark, border: `1px solid ${color}40`, marginBottom: 13, display: 'inline-flex' }}>
-              Practice · Q 1 of 1
-            </span>
+    // ── GWM practice: use the exact same card layout as actual test items ──
+    if (isGwmPractice) {
+      const letters = ['A','B','C','D','E','F','G','H'];
+      const pracOptsWrapped = pracOpts.map((o, i) => ({ value: o, origIdx: i }));
+      const pracIsVisual = optsAreTokens;
+      return (
+        <div className="relative h-screen flex flex-col overflow-hidden"
+          style={{
+            background: '#E8E4F5',
+            backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(100,72,168,0.10), transparent)',
+            fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+          }}>
+          <style>{`
+            @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+            @keyframes popIn { 0% { transform: scale(0.82); opacity: 0; } 70% { transform: scale(1.04); } 100% { transform: scale(1); opacity: 1; } }
+            @keyframes slideInCard { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+            .opt-thumb { display:flex!important; align-items:center!important; justify-content:center!important; overflow:hidden!important; border-radius:11px!important; }
+            .opt-thumb > div { width:100%!important; height:100%!important; display:flex!important; align-items:center!important; justify-content:center!important; }
+            .opt-thumb svg { display:block!important; width:100%!important; height:100%!important; }
+            .opt-thumb img { display:block!important; width:100%!important; height:100%!important; object-fit:contain!important; }
+          `}</style>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: '8px 12px 12px' }}>
+            <div style={{
+              flex: 1, display: 'flex', flexDirection: 'column',
+              background: '#FFFFFF', borderRadius: 18,
+              border: '1px solid rgba(100,72,168,0.11)',
+              boxShadow: '0 1px 1px rgba(100,72,168,0.06), 0 4px 12px rgba(100,72,168,0.08), 0 16px 40px rgba(100,72,168,0.10)',
+              animation: 'slideInCard 0.3s cubic-bezier(.4,0,.2,1)',
+              overflow: 'hidden', position: 'relative', minHeight: 0,
+            }}>
+              {/* Top accent line */}
+              <div style={{ position: 'absolute', top: 0, left: '8%', right: '8%', height: 2,
+                background: `linear-gradient(90deg,transparent,${color},transparent)`,
+                borderRadius: 99, zIndex: 1 }} />
 
-            {/* Question text — hidden for GWM until reveal finishes */}
-            {(domain !== 'gwm' || gwmRevealDone) && (
-              <h2 className="cg-display" style={{ fontSize: 20, color: '#1A1A2E', marginBottom: 6,
-                ...(domain === 'gwm' ? { animation: 'popIn 0.3s ease-out' } : {}) }}>
-                {pracQ}
-              </h2>
-            )}
-            {pracSub && !seqHasTokens && !seqHasText && domain !== 'gwm' && (
-              <p style={{ fontSize: 12, color: '#9999AA', lineHeight: 1.5, marginBottom: 18 }}>{pracSub}</p>
-            )}
+              {/* BODY: left | divider | right — same grid as actual test */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
-            {/* Stimulus card — for GWM: MemoryRevealDisplay during reveal, locked card after */}
-            {isGwmPractice && gwmRevealDone ? (
-              /* After reveal: stimulus hidden */
-              <div style={{ flex: 1, border: '2px dashed rgba(139,92,246,0.25)', borderRadius: 14,
-                background: 'rgba(139,92,246,0.04)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                gap: 10, animation: 'popIn 0.3s ease-out' }}>
-                <div style={{ fontSize: 28 }}>🔒</div>
-                <div style={{ fontSize: 13, fontWeight: 900, color: 'rgba(139,92,246,0.8)' }}>
-                  Stimulus Hidden
-                </div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(139,92,246,0.55)' }}>
-                  Read the question above and choose your answer
-                </div>
-              </div>
-            ) : isGwmPractice && pracRevealItem ? (
-              /* GWM reveal phase — use MemoryRevealDisplay exactly like real test items */
-              <div style={{ flex: 1, border: '1.5px solid rgba(100,72,168,0.11)', borderRadius: 14,
-                minHeight: 180, background: '#fff', position: 'relative', overflow: 'hidden' }}>
-                <MemoryRevealDisplay item={pracRevealItem} onRevealComplete={() => setGwmRevealDone(true)} />
-              </div>
-            ) : (
-            <div style={{ flex: 1, border: '1.5px solid rgba(100,72,168,0.11)', borderRadius: 14,
-              minHeight: 180, background: '#fff', position: 'relative', overflow: 'hidden',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              padding: 16, flexWrap: 'wrap', gap: 8 }}>
-
-              {seqHasTokens ? (
-                /* Visual tokens (shapes / images) — render each in its own cell */
-                dbSeq.map((token, idx) => (
-                  <div key={idx} style={{
-                    border: token === null ? '2px dashed #a5b4fc' : '1px solid #e8eaf0',
-                    borderRadius: 10, padding: 6,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: token === null ? '#eef2ff' : '#fff', minWidth: 64, minHeight: 64,
-                  }}>
-                    {token === null
-                      ? <span style={{ fontSize: 26, fontWeight: 900, color: '#6366F1', fontFamily: "'Fredoka One', cursive" }}>?</span>
-                      : <TokenRenderer token={token} sz={80} card={String(token).startsWith('excel_img:')} />
-                    }
-                  </div>
-                ))
-              ) : seqHasText ? (
-                /* Text tokens from the real DB item — passage vs short-sequence rendering */
-                (() => {
-                  const nonNull = dbSeq.filter(Boolean);
-                  const isPassage = dbC?.displayMode === 'text_passage' ||
-                    (nonNull.length === 1 && String(nonNull[0]).length > 80);
-                  if (isPassage) {
-                    return (
-                      <div style={{ padding: '10px 4px', width: '100%', overflowY: 'auto' }}>
-                        <p style={{
-                          fontSize: 14, lineHeight: 1.75, color: '#1A1A2E',
-                          fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 400,
-                          textAlign: 'left', margin: 0,
-                        }}>
-                          {nonNull.join(' ')}
-                        </p>
-                      </div>
-                    );
-                  }
-                  /* Short token sequence — chips styled with domain colour */
-                  return (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      gap: 8, flexWrap: 'wrap', width: '100%' }}>
-                      {dbSeq.map((tok, i) => (
-                        <div key={i} style={{
-                          color: tok === null ? dark : '#1A1A2E',
-                          background: tok === null ? bg : '#FFFFFF',
-                          borderRadius: 10, padding: '8px 16px',
-                          fontFamily: "'Fredoka One', cursive", fontWeight: 900,
-                          fontSize: 'clamp(18px, 3vw, 30px)',
-                          border: tok === null ? `2px dashed ${color}` : `1.5px solid ${color}33`,
-                          minWidth: 44, textAlign: 'center',
-                        }}>
-                          {tok === null ? '?' : tok}
-                        </div>
-                      ))}
+                {/* ── LEFT: stimulus ── */}
+                <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, background: '#F3F0FB' }}>
+                  {/* Domain chip */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, marginBottom: 8 }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px',
+                      borderRadius: 20, background: bg, border: `1px solid ${color}30`,
+                      fontSize: 10, fontWeight: 700, color: dark, letterSpacing: '0.3px' }}>
+                      {meta.icon} Practice
                     </div>
-                  );
-                })()
-              ) : DOMAIN_PRACTICE_SVG[domain] ? (
-                /* No DB item — fall back to the static illustrative SVG */
-                DOMAIN_PRACTICE_SVG[domain]
-              ) : (
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 44, marginBottom: 8 }}>{meta.icon}</div>
-                  <p style={{ fontSize: 12, color: '#9999AA' }}>Practice question — choose an answer on the right</p>
-                </div>
-              )}
-            </div>
-            )}
-          </div>
+                  </div>
 
-          {/* Right: Options */}
-          <div className="cg-right" style={{ justifyContent: 'space-between' }}>
-            {gwmLocked ? (
-              /* During GWM reveal — hide options completely */
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, opacity: 0.45 }}>
-                <p className="cg-section-label" style={{ color: '#8B5CF6' }}>🧠 Memorise the stimulus...</p>
-                <div style={{ fontSize: 36 }}>🧠</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#8B5CF6', textAlign: 'center' }}>
-                  Options will appear after<br/>the stimulus is hidden
+                  {/* Prompt — shown only after reveal */}
+                  {gwmRevealDone && (
+                    <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", color: '#1A1A2E',
+                      fontSize: 'clamp(13px,1.4vw,17px)', flexShrink: 0, marginBottom: 8, lineHeight: 1.45,
+                      animation: 'popIn 0.3s ease-out' }}>
+                      {pracQ}
+                    </div>
+                  )}
+
+                  {/* Stimulus card */}
+                  <div style={{
+                    flex: 1, minHeight: 0, background: '#FFFFFF', borderRadius: 10,
+                    border: '1.5px solid rgba(100,72,168,0.11)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: 4, overflow: 'hidden', position: 'relative',
+                  }}>
+                    <div style={{ width: '100%', height: '100%', position: 'relative',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      {!gwmRevealDone && pracRevealItem && (
+                        <MemoryRevealDisplay item={pracRevealItem} onRevealComplete={() => setGwmRevealDone(true)} />
+                      )}
+                      {gwmRevealDone && (
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(139,92,246,0.04)',
+                          border: '2px dashed rgba(139,92,246,0.25)', borderRadius: 10,
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                          gap: 10, animation: 'popIn 0.3s ease-out' }}>
+                          <div style={{ fontSize: 28 }}>🔒</div>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: 'rgba(139,92,246,0.8)' }}>Stimulus Hidden</div>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(139,92,246,0.55)' }}>
+                            Read the question above and choose your answer
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* VERTICAL DIVIDER */}
+                <div style={{ background: 'rgba(100,72,168,0.11)', width: 1 }} />
+
+                {/* ── RIGHT: options ── */}
+                <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+                  {/* Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexShrink: 0 }}>
+                    <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(100,72,168,0.11)' }} />
+                    <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '1.2px',
+                      color: gwmLocked ? color : '#9999AA',
+                      textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                      {gwmLocked ? '🧠 Memorise the stimulus...' : 'Choose one answer'}
+                    </span>
+                    <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(100,72,168,0.11)' }} />
+                  </div>
+
+                  {/* Options — hidden during reveal, shown after */}
+                  {gwmLocked ? (
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, opacity: 0.45 }}>
+                      <div style={{ fontSize: 36 }}>🧠</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#8B5CF6', textAlign: 'center' }}>
+                        Options will appear after<br/>the stimulus is hidden
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minHeight: 0,
+                      overflow: 'hidden', animation: 'popIn 0.3s ease-out' }}>
+                      {pracOptsWrapped.map((opt, si) => {
+                        let state = null;
+                        if (practiceAnswered) {
+                          if (si === pracCorrect) state = 'correct';
+                          else if (si === selectedPracOpt) state = 'wrong';
+                          else state = 'faded';
+                        }
+                        return (
+                          <OptionBtn key={si} opt={opt} letter={letters[si]}
+                            onClick={() => handlePickPrac(si)} state={state}
+                            disabled={practiceAnswered} isVisual={pracIsVisual} />
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
-            ) : (
-              /* After reveal — show options */
-              <div style={{ animation: gwmRevealDone && !practiceAnswered ? 'popIn 0.3s ease-out' : 'none' }}>
-                <p className="cg-section-label">Choose one answer</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  {pracOpts.map((o, i) => {
-                    let cls = 'cg-opt';
+
+              {/* FOOTER */}
+              <div style={{ borderTop: '1px solid rgba(100,72,168,0.11)', padding: '10px 22px 14px',
+                display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0,
+                background: '#FFFFFF', minHeight: 56 }}>
+                {!practiceAnswered && (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8,
+                    fontSize: 11, fontWeight: 600, color: '#9999AA' }}>
+                    <span style={{ width: 26, height: 26, borderRadius: 8,
+                      background: '#F3F0FB', border: '1px solid rgba(100,72,168,0.15)',
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>👆</span>
+                    {gwmLocked ? 'Watch the stimulus carefully...' : 'Select an answer from the options'}
+                  </div>
+                )}
+                {practiceAnswered && (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                      flex: 1, padding: '9px 14px', borderRadius: 12, fontWeight: 700, fontSize: 12,
+                      background: selectedPracOpt === pracCorrect ? '#E1F5EE' : '#FAECE7',
+                      border: selectedPracOpt === pracCorrect ? '1.5px solid rgba(29,158,117,0.3)' : '1.5px solid rgba(216,90,48,0.3)',
+                      color: selectedPracOpt === pracCorrect ? '#1D9E75' : '#D85A30',
+                    }}>
+                      {selectedPracOpt === pracCorrect ? '✓ Correct!' : '✗ Not quite'}
+                      {pracExplain && <span style={{ fontWeight: 400, marginLeft: 8 }}>— {pracExplain}</span>}
+                    </div>
+                    <button onClick={() => setStep('feedback')} style={{
+                      padding: '10px 28px', borderRadius: 13, border: 'none', cursor: 'pointer',
+                      background: '#6448A8', color: '#fff', fontWeight: 600, fontSize: 14,
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      boxShadow: '0 4px 14px rgba(100,72,168,0.28)', flexShrink: 0,
+                      animation: 'popIn 0.3s ease-out',
+                    }}>
+                      Continue →
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Non-GWM practice: same full-screen card layout as actual test ──
+    const letters = ['A','B','C','D','E','F','G','H'];
+    const pracOptsWrapped = pracOpts.map((o, i) => ({ value: o, origIdx: i }));
+    const pracIsVisual = optsAreTokens;
+    return (
+      <div className="relative h-screen flex flex-col overflow-hidden"
+        style={{
+          background: '#E8E4F5',
+          backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(100,72,168,0.10), transparent)',
+          fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+        }}>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+          @keyframes popIn { 0% { transform: scale(0.82); opacity: 0; } 70% { transform: scale(1.04); } 100% { transform: scale(1); opacity: 1; } }
+          @keyframes slideInCard { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+          .opt-thumb { display:flex!important; align-items:center!important; justify-content:center!important; overflow:hidden!important; border-radius:11px!important; }
+          .opt-thumb > div { width:100%!important; height:100%!important; display:flex!important; align-items:center!important; justify-content:center!important; }
+          .opt-thumb svg { display:block!important; width:100%!important; height:100%!important; }
+          .opt-thumb img { display:block!important; width:100%!important; height:100%!important; object-fit:contain!important; }
+          .stim-inner { overflow:hidden; }
+          .stim-inner > div { width:100%!important; height:100%!important; display:flex!important; align-items:center!important; justify-content:center!important; }
+          .stim-inner svg { display:block!important; max-width:100%!important; max-height:100%!important; width:auto!important; height:auto!important; }
+          .stim-inner img { display:block!important; max-width:100%!important; max-height:100%!important; object-fit:contain!important; }
+        `}</style>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: '8px 12px 12px' }}>
+          <div style={{
+            flex: 1, display: 'flex', flexDirection: 'column',
+            background: '#FFFFFF', borderRadius: 18,
+            border: '1px solid rgba(100,72,168,0.11)',
+            boxShadow: '0 1px 1px rgba(100,72,168,0.06), 0 4px 12px rgba(100,72,168,0.08), 0 16px 40px rgba(100,72,168,0.10)',
+            animation: 'slideInCard 0.3s cubic-bezier(.4,0,.2,1)',
+            overflow: 'hidden', position: 'relative', minHeight: 0,
+          }}>
+            {/* Top accent line */}
+            <div style={{ position: 'absolute', top: 0, left: '8%', right: '8%', height: 2,
+              background: `linear-gradient(90deg,transparent,${color},transparent)`,
+              borderRadius: 99, zIndex: 1 }} />
+
+            {/* BODY: left | divider | right */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+
+              {/* ── LEFT: question + stimulus ── */}
+              <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, background: '#F3F0FB' }}>
+                {/* Domain chip */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, marginBottom: 8 }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px',
+                    borderRadius: 20, background: bg, border: `1px solid ${color}30`,
+                    fontSize: 10, fontWeight: 700, color: dark, letterSpacing: '0.3px' }}>
+                    {meta.icon} Practice
+                  </div>
+                </div>
+
+                {/* Prompt */}
+                <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", color: '#1A1A2E',
+                  fontSize: 'clamp(13px,1.4vw,17px)', flexShrink: 0, marginBottom: 8, lineHeight: 1.45 }}>
+                  {pracQ}
+                </div>
+                {pracSub && (
+                  <p style={{ fontSize: 12, color: '#9999AA', lineHeight: 1.5, marginBottom: 8, flexShrink: 0 }}>{pracSub}</p>
+                )}
+
+                {/* Stimulus card */}
+                <div style={{
+                  flex: 1, minHeight: 0, background: '#FFFFFF', borderRadius: 10,
+                  border: '1.5px solid rgba(100,72,168,0.11)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: 4, overflow: 'hidden', position: 'relative',
+                }}>
+                  <div className="stim-inner" style={{ width: '100%', height: '100%', position: 'relative',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                    flexWrap: 'wrap', gap: 6, padding: 8 }}>
+                    {seqHasTokens ? (
+                      dbSeq.map((token, idx) => (
+                        <div key={idx} style={{
+                          border: token === null ? '2px dashed #a5b4fc' : '1px solid #e8eaf0',
+                          borderRadius: 10, padding: 6,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: token === null ? '#eef2ff' : '#fff', minWidth: 56, minHeight: 56,
+                        }}>
+                          {token === null
+                            ? <span style={{ fontSize: 22, fontWeight: 900, color: '#6366F1', fontFamily: "'Fredoka One', cursive" }}>?</span>
+                            : <TokenRenderer token={token} sz={120} card={String(token).startsWith('excel_img:')} />}
+                        </div>
+                      ))
+                    ) : DOMAIN_PRACTICE_SVG[domain] ? (
+                      DOMAIN_PRACTICE_SVG[domain]
+                    ) : (
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 40, marginBottom: 6 }}>{meta.icon}</div>
+                        <p style={{ fontSize: 11, color: '#9999AA' }}>Practice question</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* VERTICAL DIVIDER */}
+              <div style={{ background: 'rgba(100,72,168,0.11)', width: 1 }} />
+
+              {/* ── RIGHT: options ── */}
+              <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexShrink: 0 }}>
+                  <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(100,72,168,0.11)' }} />
+                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '1.2px',
+                    color: '#9999AA', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                    Choose one answer
+                  </span>
+                  <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(100,72,168,0.11)' }} />
+                </div>
+
+                {/* Options */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                  {pracOptsWrapped.map((opt, si) => {
+                    let state = null;
                     if (practiceAnswered) {
-                      if (i === pracCorrect) cls += ' correct';
-                      else if (i === selectedPracOpt) cls += ' incorrect';
-                      else cls += ' locked';
+                      if (si === pracCorrect) state = 'correct';
+                      else if (si === selectedPracOpt) state = 'wrong';
+                      else state = 'faded';
                     }
                     return (
-                      <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <p style={{ fontSize: 10, fontWeight: 700, color: '#9999AA', textAlign: 'center', letterSpacing: '0.5px' }}>{'ABCD'[i]}</p>
-                        <div className={cls} onClick={() => handlePickPrac(i)} style={optsAreTokens ? { minHeight: 90, padding: 8 } : undefined}>
-                          {optsAreTokens ? (
-                            <TokenRenderer token={o} sz={70} card={String(o).startsWith('excel_img:')} />
-                          ) : (
-                            <span style={{ fontSize: 13, fontWeight: 500, color: '#1A1A2E', textAlign: 'center' }}>{o}</span>
-                          )}
-                        </div>
-                      </div>
+                      <OptionBtn key={si} opt={opt} letter={letters[si]}
+                        onClick={() => handlePickPrac(si)} state={state}
+                        disabled={practiceAnswered} isVisual={pracIsVisual} />
                     );
                   })}
                 </div>
               </div>
-            )}
-            <button className="cg-btn-secondary" onClick={() => setStep('instructions')}>Back</button>
+            </div>
+
+            {/* FOOTER */}
+            <div style={{ borderTop: '1px solid rgba(100,72,168,0.11)', padding: '10px 22px 14px',
+              display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0,
+              background: '#FFFFFF', minHeight: 56 }}>
+              {!practiceAnswered && (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8,
+                  fontSize: 11, fontWeight: 600, color: '#9999AA' }}>
+                  <span style={{ width: 26, height: 26, borderRadius: 8,
+                    background: '#F3F0FB', border: '1px solid rgba(100,72,168,0.15)',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>👆</span>
+                  Select an answer from the options
+                </div>
+              )}
+              {practiceAnswered && (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{
+                    flex: 1, padding: '9px 14px', borderRadius: 12, fontWeight: 700, fontSize: 12,
+                    background: selectedPracOpt === pracCorrect ? '#E1F5EE' : '#FAECE7',
+                    border: selectedPracOpt === pracCorrect ? '1.5px solid rgba(29,158,117,0.3)' : '1.5px solid rgba(216,90,48,0.3)',
+                    color: selectedPracOpt === pracCorrect ? '#1D9E75' : '#D85A30',
+                  }}>
+                    {selectedPracOpt === pracCorrect ? '✓ Correct!' : '✗ Not quite'}
+                    {pracExplain && <span style={{ fontWeight: 400, marginLeft: 8 }}>— {pracExplain}</span>}
+                  </div>
+                  <button onClick={() => setStep('feedback')} style={{
+                    padding: '10px 28px', borderRadius: 13, border: 'none', cursor: 'pointer',
+                    background: '#6448A8', color: '#fff', fontWeight: 600, fontSize: 14,
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    boxShadow: '0 4px 14px rgba(100,72,168,0.28)', flexShrink: 0,
+                    animation: 'popIn 0.3s ease-out',
+                  }}>
+                    Continue →
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </Shell>
+      </div>
     );
+
   }
 
   // ══ S5 FEEDBACK ══
