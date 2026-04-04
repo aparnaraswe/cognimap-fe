@@ -1814,6 +1814,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                     display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
                     flexWrap: 'wrap', gap: 6, padding: 8 }}>
                     {seqHasTokens ? (
+                      /* Visual tokens from DB (shapes / images) */
                       dbSeq.map((token, idx) => (
                         <div key={idx} style={{
                           border: token === null ? '2px dashed #a5b4fc' : '1px solid #e8eaf0',
@@ -1826,7 +1827,49 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                             : <TokenRenderer token={token} sz={120} card={String(token).startsWith('excel_img:')} />}
                         </div>
                       ))
+                    ) : seqHasText ? (
+                      /* Text sequence from DB (numbers, letters, words) */
+                      (() => {
+                        const nonNull = dbSeq.filter(Boolean);
+                        const isPassage = dbC?.displayMode === 'text_passage' ||
+                          (nonNull.length === 1 && String(nonNull[0]).length > 80);
+                        if (isPassage) {
+                          return (
+                            <div style={{ padding: '10px 4px', width: '100%', overflowY: 'auto' }}>
+                              <p style={{ fontSize: 14, lineHeight: 1.75, color: '#1A1A2E',
+                                fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 400, textAlign: 'left', margin: 0 }}>
+                                {nonNull.join(' ')}
+                              </p>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            gap: 8, flexWrap: 'wrap', width: '100%' }}>
+                            {dbSeq.map((tok, i) => (
+                              <div key={i} style={{
+                                color: tok === null ? dark : '#1A1A2E',
+                                background: tok === null ? bg : '#FFFFFF',
+                                borderRadius: 10, padding: '8px 16px',
+                                fontFamily: "'Fredoka One', cursive", fontWeight: 900,
+                                fontSize: 'clamp(18px, 3vw, 30px)',
+                                border: tok === null ? `2px dashed ${color}` : `1.5px solid ${color}33`,
+                                minWidth: 44, textAlign: 'center',
+                              }}>
+                                {tok === null ? '?' : tok}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()
+                    ) : hasDbItem ? (
+                      /* DB item exists but has no sequence — text-only question (prompt is shown above) */
+                      <div style={{ textAlign: 'center', padding: 16 }}>
+                        <div style={{ fontSize: 40, marginBottom: 6 }}>{meta.icon}</div>
+                        <p style={{ fontSize: 12, color: '#9999AA' }}>Read the question above and choose your answer</p>
+                      </div>
                     ) : DOMAIN_PRACTICE_SVG[domain] ? (
+                      /* No DB item at all — fall back to static illustrative SVG */
                       DOMAIN_PRACTICE_SVG[domain]
                     ) : (
                       <div style={{ textAlign: 'center' }}>
