@@ -1,11 +1,14 @@
 /**
- * LandingPage.jsx — Full-width modern landing with smooth animations
+ * LandingPage.jsx — CogniMap animated landing
+ * Warm paper/blush/sage palette · DM Sans + DM Serif Display
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-/* ── Intersection Observer hook ── */
+/* ═══════════════════════════════════════════════════
+   HOOKS
+   ═══════════════════════════════════════════════════ */
 function useOnScreen(ref, threshold = 0.12) {
   const [vis, setVis] = useState(false);
   useEffect(() => {
@@ -16,33 +19,32 @@ function useOnScreen(ref, threshold = 0.12) {
   }, [ref, threshold]);
   return vis;
 }
-function Reveal({ children, delay = 0, className = '' }) {
+
+function Reveal({ children, delay = 0, className = '', style = {} }) {
   const ref = useRef(null);
   const vis = useOnScreen(ref);
   return (
     <div ref={ref} className={className} style={{
+      ...style,
       opacity: vis ? 1 : 0,
-      transform: vis ? 'translateY(0)' : 'translateY(32px)',
-      transition: `opacity 0.7s cubic-bezier(0.22,1,0.36,1) ${delay * 0.12}s, transform 0.7s cubic-bezier(0.22,1,0.36,1) ${delay * 0.12}s`,
+      transform: vis ? 'translateY(0)' : 'translateY(36px)',
+      transition: `opacity 0.7s cubic-bezier(0.22,1,0.36,1) ${delay * 0.13}s, transform 0.7s cubic-bezier(0.22,1,0.36,1) ${delay * 0.13}s`,
     }}>{children}</div>
   );
 }
 
-/* ── Animated counter ── */
 function Counter({ end, suffix = '', duration = 1800 }) {
   const ref = useRef(null);
   const vis = useOnScreen(ref);
   const [val, setVal] = useState(0);
   useEffect(() => {
     if (!vis) return;
-    const isNum = !isNaN(parseInt(end));
-    if (!isNum) { setVal(end); return; }
-    const target = parseInt(end);
+    const n = parseInt(end);
+    if (isNaN(n)) { setVal(end); return; }
     const start = Date.now();
     const tick = () => {
       const t = Math.min((Date.now() - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - t, 3);
-      setVal(Math.round(ease * target));
+      setVal(Math.round((1 - Math.pow(1 - t, 3)) * n));
       if (t < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
@@ -50,10 +52,48 @@ function Counter({ end, suffix = '', duration = 1800 }) {
   return <span ref={ref}>{val}{suffix}</span>;
 }
 
+/* ═══════════════════════════════════════════════════
+   DATA
+   ═══════════════════════════════════════════════════ */
+const FEATURES = [
+  { icon: '🎯', title: 'Adaptive Cognitive Testing', desc: 'Questions adapt in real-time using Item Response Theory. Accurate measurement in fewer questions — respects students\' time.', span: 2, showDna: true },
+  { icon: '🏫', title: 'School Isolation', desc: 'Every school gets its own space — students, items, reports, and settings never cross boundaries.' },
+  { icon: '🌐', title: 'Multilingual', desc: 'Students take tests in the language they think in. No comprehension barrier contaminating scores.', showLangs: true },
+  { icon: '👨‍👩‍👧', title: 'Parent Portal', desc: 'Auto-created parent accounts with email notifications. Track your child\'s progress and view released reports.' },
+  { icon: '📊', title: 'Comprehensive Reports', desc: 'Radar charts, stanine scores, narrative interpretations, and career pathway recommendations — generated in one click.', span: 2 },
+];
+
+const ASSESSMENTS = [
+  { icon: '🧠', title: 'Cognitive Aptitude', desc: 'Adaptive questions across 6 CHC domains — adjusts to ability in real-time.', color: 'var(--blush)' },
+  { icon: '💡', title: 'Personality (Big Five)', desc: 'NEO-style assessment measuring openness, conscientiousness, extraversion, agreeableness, and stability.', color: 'var(--sage)' },
+  { icon: '🧭', title: 'Career Interest (RIASEC)', desc: 'Holland\'s model for career pathway guidance across 6 interest dimensions.', color: 'var(--gold)' },
+];
+
+const STEPS = [
+  { num: '01', title: 'Onboard your school', desc: 'Create a source, bulk-import students via Excel. Parents get auto-created accounts with email notifications.' },
+  { num: '02', title: 'Assign assessments', desc: 'Pick a test type, assign to students in one click. Set deadlines and optional access tokens.' },
+  { num: '03', title: 'Generate reports', desc: 'Comprehensive reports with charts, scores, and career recommendations. Release them when ready.' },
+];
+
+const MARQUEE_ITEMS = [
+  { label: 'Adaptive Testing (IRT)', color: 'var(--blush)' },
+  { label: 'Multi-Source Isolation', color: 'var(--sage)' },
+  { label: 'Hindi · Marathi · English', color: 'var(--gold)' },
+  { label: 'Parent Portal', color: 'var(--blush)' },
+  { label: 'Detailed Reports', color: 'var(--sage)' },
+  { label: 'Bulk Student Import', color: 'var(--gold)' },
+  { label: 'Token-based Access', color: 'var(--blush)' },
+  { label: 'Per-School Configuration', color: 'var(--sage)' },
+];
+
+/* ═══════════════════════════════════════════════════
+   COMPONENT
+   ═══════════════════════════════════════════════════ */
 export default function LandingPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [scrollY, setScrollY] = useState(0);
+  const [mousePos, setMousePos] = useState({ x: -300, y: -300 });
 
   useEffect(() => {
     if (user) {
@@ -68,238 +108,463 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Cursor glow (desktop only)
+  useEffect(() => {
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+    const onMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
+    document.addEventListener('mousemove', onMove);
+    return () => document.removeEventListener('mousemove', onMove);
+  }, []);
+
   const goLogin = () => navigate('/login');
-
-  const DOMAINS = [
-    { icon: '🧩', name: 'Pattern Reasoning', code: 'Gf', desc: 'Identify rules in visual sequences and predict what comes next', color: '#6366F1' },
-    { icon: '👁️', name: 'Visual Processing', code: 'Gv', desc: 'Rotate, reflect, and mentally transform spatial patterns', color: '#8B5CF6' },
-    { icon: '⚡', name: 'Processing Speed', code: 'Gs', desc: 'Quickly scan, compare, and make decisions under time pressure', color: '#F59E0B' },
-    { icon: '🧠', name: 'Working Memory', code: 'Gwm', desc: 'Hold and manipulate information in your mind over short intervals', color: '#EC4899' },
-    { icon: '🔢', name: 'Quantitative', code: 'Gq', desc: 'Apply mathematical reasoning to solve novel number problems', color: '#14B8A6' },
-    { icon: '📖', name: 'Comprehension', code: 'Gc', desc: 'Understand language, vocabulary, and verbal relationships', color: '#3B82F6' },
-  ];
-
-  const STATS = [
-    { value: '6', label: 'Cognitive domains', suffix: '' },
-    { value: '3', label: 'Assessment types', suffix: '' },
-    { value: 'IRT', label: 'Adaptive scoring', suffix: '' },
-    { value: 'Live', label: 'Real-time results', suffix: '' },
-  ];
-
-  const ASSESSMENTS = [
-    { icon: '🧠', title: 'Cognitive Aptitude', desc: 'Adaptive questions across six domains — adjusts to your ability in real-time using Item Response Theory.', gradient: 'linear-gradient(135deg, #6366F1, #8B5CF6)' },
-    { icon: '🎭', title: 'Personality Profile', desc: 'Discover how you approach the world — your traits, preferences, and interaction style using the Big Five model.', gradient: 'linear-gradient(135deg, #EC4899, #F472B6)' },
-    { icon: '🎯', title: 'Interest Profile', desc: 'Explore what activities and career paths energise you most across Holland RIASEC dimensions.', gradient: 'linear-gradient(135deg, #14B8A6, #5EEAD4)' },
-  ];
-
-  const navOpaque = scrollY > 60;
+  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
   return (
-    <div style={{ fontFamily: "'Inter', 'DM Sans', system-ui, sans-serif", color: '#0f172a', overflowX: 'hidden' }}>
+    <div style={{ fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif", color: '#1a2332', overflowX: 'hidden', background: '#f5f2ed' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        @keyframes cm-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-        @keyframes cm-pulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
-        @keyframes cm-gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        @keyframes cm-lineUp { from { transform: translateY(110%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes cm-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Serif+Display&display=swap');
+
+        /* Animations */
+        @keyframes orbFloat {
+          0%   { transform: translate(0, 0) scale(1); }
+          33%  { transform: translate(60px, -40px) scale(1.1); }
+          66%  { transform: translate(-30px, 50px) scale(0.95); }
+          100% { transform: translate(40px, -20px) scale(1.05); }
+        }
+        @keyframes floatCard {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-14px); }
+        }
+        @keyframes floatCardCenter {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(-14px); }
+        }
+        @keyframes barFill {
+          0% { width: 30%; }
+          100% { width: 90%; }
+        }
+        @keyframes gradientShift {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        @keyframes badgePulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(95,143,114,0.15); }
+          50% { box-shadow: 0 0 0 8px rgba(95,143,114,0); }
+        }
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes dnaBounce {
+          0%, 100% { height: 12px; opacity: 0.3; }
+          50% { height: 50px; opacity: 1; }
+        }
+        @keyframes pillPop {
+          0% { opacity: 0; transform: scale(0.5); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes heroLineUp {
+          from { transform: translateY(110%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes spinSlow { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+
         .cm-hero-line { display: block; overflow: hidden; }
-        .cm-hero-line span { display: block; transform: translateY(110%); opacity: 0; animation: cm-lineUp 0.8s cubic-bezier(0.22,1,0.36,1) forwards; }
+        .cm-hero-line span { display: block; transform: translateY(110%); opacity: 0; animation: heroLineUp 0.8s cubic-bezier(0.22,1,0.36,1) forwards; }
         .cm-hero-line:nth-child(1) span { animation-delay: 0.3s; }
         .cm-hero-line:nth-child(2) span { animation-delay: 0.45s; }
         .cm-hero-line:nth-child(3) span { animation-delay: 0.6s; }
-        .cm-domain-card:hover { transform: translateY(-6px) !important; box-shadow: 0 20px 40px rgba(0,0,0,0.12) !important; }
-        .cm-assess-card:hover { transform: translateY(-4px) scale(1.02) !important; }
-        .cm-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(99,102,241,0.4) !important; }
+
+        .cm-nav-link { position: relative; font-size: 13px; font-weight: 500; color: #64748b; transition: color 0.2s; cursor: pointer; background: none; border: none; font-family: inherit; padding: 0; }
+        .cm-nav-link:hover { color: #1a2332; }
+        .cm-nav-link::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px; background: #c97d5f; border-radius: 1px; transition: width 0.3s cubic-bezier(0.22,1,0.36,1); }
+        .cm-nav-link:hover::after { width: 100%; }
+
+        .cm-float-card { transition: transform 0.3s, box-shadow 0.3s; }
+        .cm-float-card:hover { transform: translateY(-6px) !important; box-shadow: 0 20px 50px rgba(26,35,50,0.1) !important; }
+
+        .cm-bento-card { transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s; }
+        .cm-bento-card:hover { transform: translateY(-4px); box-shadow: 0 16px 50px rgba(26,35,50,0.08); }
+
+        .cm-step-card { transition: transform 0.3s, box-shadow 0.3s; }
+        .cm-step-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(26,35,50,0.08); }
+
+        .cm-btn-primary { transition: transform 0.2s, box-shadow 0.2s; }
+        .cm-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(26,35,50,0.18) !important; }
+
+        @media (max-width: 768px) {
+          .cm-bento { grid-template-columns: 1fr !important; }
+          .cm-bento-span2 { grid-column: span 1 !important; }
+          .cm-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .cm-steps-grid { grid-template-columns: 1fr !important; }
+          .cm-hero-visual { height: auto !important; position: static !important; display: flex !important; flex-direction: column !important; gap: 16px !important; }
+          .cm-hero-visual > div { position: static !important; width: 100% !important; animation: floatCard 6s ease-in-out infinite !important; }
+          .cm-nav-links { display: none !important; }
+        }
       `}</style>
 
-      {/* ══ NAV ══ */}
+      {/* ── Background orbs ── */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', filter: 'blur(80px)', opacity: 0.2, background: 'radial-gradient(circle, #c97d5f, transparent 70%)', top: '-10%', left: '-5%', animation: 'orbFloat 22s ease-in-out infinite alternate' }} />
+        <div style={{ position: 'absolute', width: 600, height: 600, borderRadius: '50%', filter: 'blur(80px)', opacity: 0.2, background: 'radial-gradient(circle, #5f8f72, transparent 70%)', top: '40%', right: '-10%', animation: 'orbFloat 26s ease-in-out infinite alternate', animationDelay: '-5s' }} />
+        <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', filter: 'blur(80px)', opacity: 0.2, background: 'radial-gradient(circle, #c9963e, transparent 70%)', bottom: '-5%', left: '30%', animation: 'orbFloat 18s ease-in-out infinite alternate', animationDelay: '-10s' }} />
+      </div>
+
+      {/* ── Cursor glow ── */}
+      <div style={{
+        position: 'fixed', width: 300, height: 300, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(201,125,95,0.06), transparent 70%)',
+        pointerEvents: 'none', zIndex: 0,
+        transform: 'translate(-50%, -50%)',
+        left: mousePos.x, top: mousePos.y,
+        transition: 'left 0.15s ease-out, top 0.15s ease-out',
+      }} />
+
+      {/* ═══ NAVBAR ═══ */}
       <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
-        padding: '0 clamp(16px, 4vw, 48px)', height: 64,
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+        padding: '0 clamp(16px, 4vw, 40px)', height: 64,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: navOpaque ? 'rgba(255,255,255,0.92)' : 'transparent',
-        backdropFilter: navOpaque ? 'blur(16px)' : 'none',
-        borderBottom: navOpaque ? '1px solid rgba(0,0,0,0.06)' : 'none',
+        background: scrollY > 10 ? 'rgba(245,242,237,0.7)' : 'transparent',
+        backdropFilter: scrollY > 10 ? 'blur(16px) saturate(180%)' : 'none',
+        borderBottom: scrollY > 10 ? '1px solid rgba(26,35,50,0.08)' : '1px solid transparent',
         transition: 'all 0.3s',
+        boxShadow: scrollY > 10 ? '0 4px 30px rgba(26,35,50,0.06)' : 'none',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 34, height: 34, borderRadius: 10,
-            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff', fontSize: 12, fontWeight: 800, letterSpacing: 1,
-          }}>CM</div>
-          <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: -0.5 }}>CogniMap</span>
+        <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 22, letterSpacing: -0.5 }}>
+          Cogni<span style={{ color: '#c97d5f' }}>Map</span>
+        </div>
+        <div className="cm-nav-links" style={{ display: 'flex', gap: 32 }}>
+          <button className="cm-nav-link" onClick={() => scrollTo('features')}>Features</button>
+          <button className="cm-nav-link" onClick={() => scrollTo('how')}>How it works</button>
+          <button className="cm-nav-link" onClick={() => scrollTo('assessments')}>Assessments</button>
+          <button className="cm-nav-link" onClick={() => scrollTo('contact')}>Contact</button>
         </div>
         <button onClick={goLogin} className="cm-btn-primary" style={{
-          background: '#0f172a', color: '#fff', border: 'none', borderRadius: 10,
-          padding: '10px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-          transition: 'all 0.2s', letterSpacing: 0.3,
+          padding: '9px 22px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+          background: '#1a2332', color: '#fff', border: 'none', cursor: 'pointer',
         }}>Sign In</button>
       </nav>
 
-      {/* ══ HERO ══ */}
+      {/* ═══ HERO ═══ */}
       <section style={{
-        minHeight: '100vh', display: 'flex', alignItems: 'center',
-        padding: 'clamp(100px, 15vh, 160px) clamp(20px, 6vw, 80px) clamp(60px, 10vh, 120px)',
-        background: 'linear-gradient(160deg, #f8fafc 0%, #eef2ff 40%, #faf5ff 70%, #fdf2f8 100%)',
-        position: 'relative', overflow: 'hidden',
+        position: 'relative', zIndex: 1,
+        minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        textAlign: 'center', padding: '120px 24px 80px',
       }}>
-        {/* Decorative orbs */}
-        <div style={{ position: 'absolute', top: '15%', right: '10%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.08), transparent 70%)', animation: 'cm-float 8s ease-in-out infinite', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '10%', left: '5%', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(236,72,153,0.06), transparent 70%)', animation: 'cm-float 10s ease-in-out infinite 2s', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: '50%', right: '30%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(20,184,166,0.06), transparent 70%)', animation: 'cm-float 6s ease-in-out infinite 4s', pointerEvents: 'none' }} />
-
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 800 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#6366F1', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 20, opacity: 0, animation: 'cm-lineUp 0.6s 0.1s forwards' }}>
-            Psychometric Assessment Platform
-          </div>
-          <h1 style={{ fontSize: 'clamp(2.8rem, 6vw, 4.8rem)', fontWeight: 900, lineHeight: 1.05, letterSpacing: -2, color: '#0f172a' }}>
-            <div className="cm-hero-line"><span>Discover how</span></div>
-            <div className="cm-hero-line"><span style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6, #EC4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundSize: '200% 200%', animation: 'cm-gradient 4s ease infinite' }}>your mind works</span></div>
-            <div className="cm-hero-line"><span>from the inside.</span></div>
-          </h1>
-          <p style={{ fontSize: 'clamp(15px, 1.8vw, 18px)', color: '#64748b', lineHeight: 1.75, maxWidth: 560, marginTop: 28, opacity: 0, animation: 'cm-lineUp 0.7s 0.85s forwards' }}>
-            CogniMap uses <strong style={{ color: '#0f172a' }}>adaptive IRT-based assessments</strong> to measure your cognitive abilities across six domains, personality traits, and interest profiles — all scored in real-time.
-          </p>
-          <div style={{ display: 'flex', gap: 12, marginTop: 36, opacity: 0, animation: 'cm-lineUp 0.7s 1s forwards', flexWrap: 'wrap' }}>
-            <button onClick={goLogin} className="cm-btn-primary" style={{
-              background: 'linear-gradient(135deg, #6366F1, #4F46E5)', color: '#fff', border: 'none',
-              borderRadius: 14, padding: '16px 36px', fontSize: 15, fontWeight: 700,
-              cursor: 'pointer', transition: 'all 0.25s', boxShadow: '0 8px 24px rgba(99,102,241,0.25)',
-            }}>Get Started</button>
-            <button onClick={goLogin} style={{
-              background: 'rgba(255,255,255,0.7)', color: '#0f172a', border: '1.5px solid #e2e8f0',
-              borderRadius: 14, padding: '16px 32px', fontSize: 15, fontWeight: 600,
-              cursor: 'pointer', transition: 'all 0.2s', backdropFilter: 'blur(8px)',
-            }}>Learn More</button>
-          </div>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          padding: '6px 16px', borderRadius: 50,
+          background: 'rgba(95,143,114,0.08)', border: '1px solid rgba(95,143,114,0.15)',
+          fontSize: 12, fontWeight: 600, color: '#5f8f72',
+          marginBottom: 28, animation: 'badgePulse 3s ease-in-out infinite',
+        }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#5f8f72' }} />
+          Built for Indian schools · NEP 2020 aligned
         </div>
-      </section>
 
-      {/* ══ STATS BAR ══ */}
-      <section style={{ background: '#0f172a', padding: 'clamp(32px, 5vw, 56px) clamp(20px, 4vw, 48px)', display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 0 }}>
-        {STATS.map((s, i) => (
-          <div key={i} style={{
-            flex: '1 1 180px', maxWidth: 260, padding: '20px 32px', textAlign: 'center',
-            borderRight: i < STATS.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
+        <h1 style={{
+          fontFamily: "'DM Serif Display', Georgia, serif",
+          fontSize: 'clamp(36px, 6vw, 68px)', fontWeight: 400,
+          lineHeight: 1.1, letterSpacing: -1.5, maxWidth: 800, marginBottom: 20,
+        }}>
+          <div className="cm-hero-line"><span>Discover every student's</span></div>
+          <div className="cm-hero-line">
+            <span style={{
+              background: 'linear-gradient(135deg, #c97d5f, #c9963e, #5f8f72)',
+              backgroundSize: '200% 200%',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              animation: 'gradientShift 5s ease infinite',
+            }}>true potential</span>
+          </div>
+        </h1>
+
+        <p style={{
+          fontSize: 'clamp(15px, 2vw, 18px)', color: '#64748b',
+          maxWidth: 560, lineHeight: 1.7, marginBottom: 36,
+          opacity: 0, animation: 'heroLineUp 0.7s 0.85s forwards',
+        }}>
+          AI-powered psychometric assessments that measure cognitive aptitude, personality, and career interests — in English, Hindi, and Marathi. Fair, scientific, beautiful.
+        </p>
+
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center', opacity: 0, animation: 'heroLineUp 0.7s 1s forwards' }}>
+          <button onClick={goLogin} className="cm-btn-primary" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '14px 32px', borderRadius: 10,
+            background: '#1a2332', color: '#fff',
+            fontSize: 14, fontWeight: 600, fontFamily: 'inherit',
+            border: 'none', cursor: 'pointer',
           }}>
-            <div style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
-              <Counter end={s.value} suffix={s.suffix} />
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+            Start your pilot
+          </button>
+          <button onClick={() => scrollTo('features')} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '14px 32px', borderRadius: 10,
+            background: '#fff', color: '#1a2332',
+            fontSize: 14, fontWeight: 600, fontFamily: 'inherit',
+            border: '1px solid rgba(26,35,50,0.08)', cursor: 'pointer',
+            transition: 'transform 0.2s, border-color 0.2s',
+          }}>
+            Learn more
+          </button>
+        </div>
+
+        {/* Floating cards */}
+        <div className="cm-hero-visual" style={{ position: 'relative', width: '100%', maxWidth: 900, height: 340, marginTop: 60 }}>
+          {ASSESSMENTS.map((a, i) => {
+            const positions = [
+              { top: 0, left: '5%', width: 260, delay: '0s' },
+              { top: 30, right: '5%', width: 240, delay: '-2s' },
+              { bottom: 0, left: '50%', width: 280, delay: '-4s' },
+            ];
+            const pos = positions[i];
+            return (
+              <div key={a.title} className="cm-float-card" style={{
+                position: 'absolute', ...pos,
+                transform: i === 2 ? 'translateX(-50%)' : undefined,
+                background: '#fff', border: '1px solid rgba(26,35,50,0.08)', borderRadius: 16,
+                padding: '20px 24px', boxShadow: '0 12px 40px rgba(26,35,50,0.06)',
+                animation: `${i === 2 ? 'floatCardCenter' : 'floatCard'} 6s ease-in-out infinite`,
+                animationDelay: pos.delay,
+              }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 18, marginBottom: 12,
+                  background: `${a.color}14`,
+                }}>{a.icon}</div>
+                <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 15, marginBottom: 4 }}>{a.title}</div>
+                <div style={{ fontSize: 12, color: '#8898aa', lineHeight: 1.5 }}>{a.desc.slice(0, 60)}...</div>
+                <div style={{ marginTop: 14, height: 6, borderRadius: 3, background: '#f5f2ed', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: 3, background: `linear-gradient(90deg, ${a.color}, ${a.color}88)`, animation: 'barFill 3s ease-in-out infinite alternate' }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ═══ MARQUEE ═══ */}
+      <div style={{
+        position: 'relative', zIndex: 1, overflow: 'hidden',
+        borderTop: '1px solid rgba(26,35,50,0.08)', borderBottom: '1px solid rgba(26,35,50,0.08)',
+        background: 'rgba(255,255,255,0.4)',
+      }}>
+        <div style={{ display: 'flex', width: 'max-content', animation: 'marquee 30s linear infinite' }}>
+          {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((m, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 36px', fontSize: 13, fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: m.color, flexShrink: 0 }} />
+              {m.label}
             </div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 6, fontWeight: 500 }}>{s.label}</div>
-          </div>
-        ))}
-      </section>
-
-      {/* ══ COGNITIVE DOMAINS ══ */}
-      <section style={{ padding: 'clamp(60px, 10vw, 100px) clamp(20px, 4vw, 48px)', background: '#fff' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <Reveal><div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#6366F1', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10 }}>What We Measure</div>
-            <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 800, lineHeight: 1.15, letterSpacing: -1 }}>Six dimensions of<br /><span style={{ color: '#6366F1' }}>cognitive ability</span></h2>
-          </div></Reveal>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-            {DOMAINS.map((d, i) => (
-              <Reveal key={d.code} delay={i + 1}>
-                <div className="cm-domain-card" style={{
-                  padding: 24, borderRadius: 16,
-                  background: '#fafafa', border: '1px solid #f1f5f9',
-                  transition: 'all 0.3s cubic-bezier(0.22,1,0.36,1)',
-                  cursor: 'default',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                    <div style={{
-                      width: 44, height: 44, borderRadius: 12,
-                      background: `${d.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 22,
-                    }}>{d.icon}</div>
-                    <div>
-                      <div style={{ fontSize: 15, fontWeight: 700 }}>{d.name}</div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: d.color, letterSpacing: 1 }}>{d.code}</div>
-                    </div>
-                  </div>
-                  <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.65 }}>{d.desc}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+          ))}
         </div>
-      </section>
+      </div>
 
-      {/* ══ ASSESSMENTS ══ */}
-      <section style={{
-        padding: 'clamp(60px, 10vw, 100px) clamp(20px, 4vw, 48px)',
-        background: 'linear-gradient(180deg, #f8fafc, #eef2ff)',
-      }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <Reveal><div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#8B5CF6', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10 }}>Your Journey</div>
-            <h2 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 800, lineHeight: 1.15, letterSpacing: -1 }}>Three assessments.<br /><span style={{ color: '#8B5CF6' }}>One complete profile.</span></h2>
-            <p style={{ fontSize: 15, color: '#64748b', lineHeight: 1.7, maxWidth: 520, margin: '16px auto 0' }}>Each assessment adapts to your level, scores in real-time, and builds toward a comprehensive cognitive profile.</p>
-          </div></Reveal>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
-            {ASSESSMENTS.map((a, i) => (
-              <Reveal key={a.title} delay={i + 1}>
-                <div className="cm-assess-card" onClick={goLogin} style={{
-                  padding: 28, borderRadius: 20,
-                  background: '#fff', border: '1px solid #e2e8f0',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
-                  cursor: 'pointer', transition: 'all 0.3s',
-                }}>
-                  <div style={{
-                    width: 52, height: 52, borderRadius: 14,
-                    background: a.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 24, marginBottom: 16, boxShadow: `0 6px 20px ${a.gradient.includes('#6366') ? 'rgba(99,102,241,0.2)' : a.gradient.includes('#EC48') ? 'rgba(236,72,153,0.2)' : 'rgba(20,184,166,0.2)'}`,
-                  }}>{a.icon}</div>
-                  <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>{a.title}</h3>
-                  <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7 }}>{a.desc}</p>
-                  <div style={{ marginTop: 16, fontSize: 13, fontWeight: 600, color: '#6366F1', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    Start assessment <span style={{ fontSize: 16 }}>→</span>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══ CTA ══ */}
-      <section style={{
-        padding: 'clamp(60px, 10vw, 100px) clamp(20px, 6vw, 80px)',
-        background: 'linear-gradient(135deg, #0f172a, #1e293b)',
-        textAlign: 'center', position: 'relative', overflow: 'hidden',
-      }}>
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 600, height: 600, borderRadius: '50%', border: '1px solid rgba(99,102,241,0.08)', animation: 'cm-spin 30s linear infinite', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 400, height: 400, borderRadius: '50%', border: '1px solid rgba(139,92,246,0.06)', animation: 'cm-spin 20s linear infinite reverse', pointerEvents: 'none' }} />
+      {/* ═══ FEATURES — BENTO ═══ */}
+      <section id="features" style={{ position: 'relative', zIndex: 1, maxWidth: 1100, margin: '0 auto', padding: '100px 24px' }}>
         <Reveal>
-          <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 800, color: '#fff', lineHeight: 1.15, letterSpacing: -1, position: 'relative' }}>
-            Ready to map<br /><span style={{ background: 'linear-gradient(135deg, #818CF8, #C084FC)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>your mind?</span>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: '#c97d5f', marginBottom: 10 }}>Platform</div>
+        </Reveal>
+        <Reveal delay={1}>
+          <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(28px, 4vw, 42px)', lineHeight: 1.2, maxWidth: 500, marginBottom: 50 }}>
+            Everything you need to assess, guide, and grow
           </h2>
         </Reveal>
-        <Reveal delay={1}><p style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, maxWidth: 420, margin: '20px auto 32px', position: 'relative' }}>
-          It takes just a few minutes to discover how you think, reason, and learn.
-        </p></Reveal>
-        <Reveal delay={2}>
-          <button onClick={goLogin} className="cm-btn-primary" style={{
-            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', color: '#fff', border: 'none',
-            borderRadius: 14, padding: '18px 44px', fontSize: 16, fontWeight: 700,
-            cursor: 'pointer', transition: 'all 0.25s', boxShadow: '0 8px 32px rgba(99,102,241,0.35)',
-            position: 'relative',
-          }}>Get Started Free</button>
+
+        <div className="cm-bento" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          {FEATURES.map((f, i) => (
+            <Reveal key={f.title} delay={i + 2} className={f.span === 2 ? 'cm-bento-span2' : ''} style={f.span === 2 ? { gridColumn: 'span 2' } : {}}>
+              <div className="cm-bento-card" style={{
+                background: '#fff', border: '1px solid rgba(26,35,50,0.08)', borderRadius: 18,
+                padding: 30, overflow: 'hidden', height: '100%',
+              }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 12,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22, marginBottom: 18,
+                  background: i % 3 === 0 ? 'rgba(201,125,95,0.08)' : i % 3 === 1 ? 'rgba(95,143,114,0.08)' : 'rgba(201,150,62,0.08)',
+                }}>{f.icon}</div>
+                <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 19, marginBottom: 8 }}>{f.title}</div>
+                <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6 }}>{f.desc}</div>
+
+                {/* DNA visualizer */}
+                {f.showDna && (
+                  <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 20, height: 60 }}>
+                    {Array.from({ length: 30 }, (_, j) => {
+                      const colors = ['#c97d5f', '#5f8f72', '#c9963e'];
+                      return (
+                        <div key={j} style={{
+                          width: 8, borderRadius: 4,
+                          background: colors[Math.floor(j / 10)],
+                          animation: `dnaBounce 2s ease-in-out infinite`,
+                          animationDelay: `${j * 0.1}s`,
+                        }} />
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Language pills */}
+                {f.showLangs && (
+                  <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
+                    {[
+                      { label: 'English', bg: 'rgba(201,125,95,0.08)', color: '#c97d5f' },
+                      { label: 'हिन्दी', bg: 'rgba(95,143,114,0.08)', color: '#5f8f72' },
+                      { label: 'मराठी', bg: 'rgba(201,150,62,0.08)', color: '#c9963e' },
+                    ].map((l, j) => (
+                      <span key={l.label} style={{
+                        padding: '8px 18px', borderRadius: 50,
+                        fontSize: 14, fontWeight: 600,
+                        background: l.bg, color: l.color,
+                        animation: `pillPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both`,
+                        animationDelay: `${0.1 + j * 0.15}s`,
+                      }}>{l.label}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══ STATS ═══ */}
+      <section style={{
+        position: 'relative', zIndex: 1, padding: '80px 24px',
+        background: '#1a2332', color: '#fff', overflow: 'hidden',
+      }}>
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'radial-gradient(ellipse at 20% 50%, rgba(201,125,95,0.15), transparent 60%), radial-gradient(ellipse at 80% 50%, rgba(95,143,114,0.15), transparent 60%)',
+        }} />
+        <div className="cm-stats-grid" style={{
+          position: 'relative', zIndex: 1,
+          maxWidth: 900, margin: '0 auto',
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, textAlign: 'center',
+        }}>
+          {[
+            { val: '6', label: 'Cognitive domains' },
+            { val: '5', label: 'Personality traits' },
+            { val: '6', label: 'Interest dimensions' },
+            { val: '3', label: 'Languages' },
+          ].map((s, i) => (
+            <Reveal key={s.label} delay={i}>
+              <div>
+                <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(32px, 5vw, 48px)' }}>
+                  <Counter end={s.val} />
+                </div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 6 }}>{s.label}</div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══ HOW IT WORKS ═══ */}
+      <section id="how" style={{ position: 'relative', zIndex: 1, maxWidth: 1100, margin: '0 auto', padding: '100px 24px' }}>
+        <Reveal>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: '#c97d5f', marginBottom: 10 }}>How it works</div>
+        </Reveal>
+        <Reveal delay={1}>
+          <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(28px, 4vw, 42px)', lineHeight: 1.2, maxWidth: 500, marginBottom: 50 }}>
+            Three steps to insight
+          </h2>
+        </Reveal>
+
+        <div className="cm-steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          {STEPS.map((s, i) => (
+            <Reveal key={s.num} delay={i + 2}>
+              <div className="cm-step-card" style={{
+                background: '#fff', border: '1px solid rgba(26,35,50,0.08)', borderRadius: 18, padding: 32,
+              }}>
+                <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 48, color: 'rgba(26,35,50,0.08)', lineHeight: 1, marginBottom: 14 }}>{s.num}</div>
+                <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 18, marginBottom: 8 }}>{s.title}</div>
+                <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6 }}>{s.desc}</div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══ ASSESSMENTS ═══ */}
+      <section id="assessments" style={{
+        position: 'relative', zIndex: 1,
+        maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px',
+      }}>
+        <Reveal>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: '#5f8f72', marginBottom: 10 }}>Assessments</div>
+        </Reveal>
+        <Reveal delay={1}>
+          <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(28px, 4vw, 42px)', lineHeight: 1.2, maxWidth: 500, marginBottom: 50 }}>
+            Three assessments. One complete profile.
+          </h2>
+        </Reveal>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+          {ASSESSMENTS.map((a, i) => (
+            <Reveal key={a.title} delay={i + 2}>
+              <div className="cm-bento-card" onClick={goLogin} style={{
+                background: '#fff', border: '1px solid rgba(26,35,50,0.08)', borderRadius: 18,
+                padding: 28, cursor: 'pointer',
+              }}>
+                <div style={{
+                  width: 52, height: 52, borderRadius: 14,
+                  background: `${a.color}14`, color: a.color,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 24, marginBottom: 16,
+                }}>{a.icon}</div>
+                <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 18, marginBottom: 8 }}>{a.title}</div>
+                <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7 }}>{a.desc}</div>
+                <div style={{ marginTop: 16, fontSize: 13, fontWeight: 600, color: '#c97d5f', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  Start assessment <span style={{ fontSize: 16 }}>→</span>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══ CTA ═══ */}
+      <section id="contact" style={{ position: 'relative', zIndex: 1, padding: '100px 24px', textAlign: 'center' }}>
+        <Reveal>
+          <div style={{
+            maxWidth: 700, margin: '0 auto',
+            background: '#fff', border: '1px solid rgba(26,35,50,0.08)',
+            borderRadius: 24, padding: '60px 40px',
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{ position: 'absolute', top: -60, right: -60, width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(201,125,95,0.1), transparent)' }} />
+            <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 'clamp(24px, 3.5vw, 36px)', marginBottom: 14 }}>
+              Ready to discover what your students are capable of?
+            </h2>
+            <p style={{ fontSize: 15, color: '#64748b', marginBottom: 30, lineHeight: 1.6 }}>
+              Start a free pilot with your school. No credit card, no commitment — just better assessment data.
+            </p>
+            <a href="mailto:rasweaparna8@gmail.com" className="cm-btn-primary" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '14px 32px', borderRadius: 10,
+              background: '#1a2332', color: '#fff',
+              fontSize: 14, fontWeight: 600, textDecoration: 'none',
+            }}>
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+              Contact us
+            </a>
+          </div>
         </Reveal>
       </section>
 
-      {/* ══ FOOTER ══ */}
-      <footer style={{ background: '#0f172a', padding: '28px clamp(20px, 4vw, 48px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 26, height: 26, borderRadius: 7, background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 800 }}>CM</div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>CogniMap</span>
+      {/* ═══ FOOTER ═══ */}
+      <footer style={{
+        position: 'relative', zIndex: 1,
+        borderTop: '1px solid rgba(26,35,50,0.08)',
+        padding: '40px 24px', textAlign: 'center',
+      }}>
+        <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 18, marginBottom: 8 }}>
+          Cogni<span style={{ color: '#c97d5f' }}>Map</span>
         </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>Assessment Platform · {new Date().getFullYear()}</div>
+        <p style={{ fontSize: 12, color: '#8898aa' }}>&copy; {new Date().getFullYear()} CogniMap. Psychometric assessment platform for Indian schools.</p>
       </footer>
     </div>
   );
