@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { SourceProvider, useSource } from './context/SourceContext';
+import { BatchProvider } from './context/BatchContext';
 import { AdminLayout, StudentLayout } from './components/Layout';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -13,15 +15,20 @@ import SetupAssignPage from './pages/SetupAssignPage';
 import ReportsPage from './pages/ReportsPage';
 import ReportViewPage from './pages/ReportViewPage';
 import UsersPage from './pages/UsersPage';
+import SourcesPage from './pages/SourcesPage';
+import BatchesPage from './pages/BatchesPage';
 import AuditPage from './pages/AuditPage';
 import SettingsPage from './pages/SettingsPage';
 import AccessControlPage from './pages/AccessControlPage';
 import TokenManagerPage from './pages/TokenManagerPage';
 import ShapeLibraryPage from './pages/ShapeLibraryPage';
 import DomainInstructionsPage from './pages/DomainInstructionsPage';
+import ReportConfigPage from './pages/ReportConfigPage';
 import StudentDashboard from './pages/StudentDashboard';
 import GuardianDashboard from './pages/GuardianDashboard';
 import GuardianAssignPage from './pages/GuardianAssignPage';
+import OnboardingPage from './pages/OnboardingPage';
+import SelectSourcePage from './pages/SelectSourcePage';
 import TestRunner from './pages/TestRunner';
 import TestComplete from './pages/TestComplete';
 
@@ -42,6 +49,45 @@ function ProtectedRoute({ children, allowedRoles }) {
   return children;
 }
 
+/**
+ * SourceGate — forces super admins to pick a source before entering the admin area.
+ * Non-super-admins are auto-scoped to their own source.
+ */
+function SourceGate({ children }) {
+  const { user } = useAuth();
+  const { sources, loading: sourcesLoading } = useSource();
+  const activeSource = typeof window !== 'undefined' ? localStorage.getItem('cognimap_active_source') : null;
+
+  // Wait for sources to load before deciding
+  if (user?.role === 'super_admin' && sourcesLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#f8fafc' }}>
+        <div className="text-sm text-slate-500">Loading sources...</div>
+      </div>
+    );
+  }
+
+  // Super admin: must have an active source AND it must exist in the loaded list
+  if (user?.role === 'super_admin') {
+    const isValid = activeSource && sources.some(s => s.id === activeSource);
+    if (!isValid) {
+      // Clear stale value before redirecting
+      if (activeSource) localStorage.removeItem('cognimap_active_source');
+      return <Navigate to="/admin/select-source" replace />;
+    }
+  }
+
+  // Non-super-admin: auto-store their own source so headers go out with requests
+  if (user && user.role !== 'super_admin') {
+    const myId = user.source_id || user.organization_id;
+    if (myId && myId !== activeSource) {
+      localStorage.setItem('cognimap_active_source', myId);
+    }
+  }
+
+  return children;
+}
+
 function RoleRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
@@ -58,13 +104,23 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/home" element={<RoleRedirect />} />
 
+      {/* Source picker for super admin (no AdminLayout — full screen) */}
+      <Route path="/admin/select-source" element={
+        <ProtectedRoute allowedRoles={['super_admin','psychologist','client_admin']}>
+          <SelectSourcePage />
+        </ProtectedRoute>
+      } />
+
       {/* Admin routes */}
       <Route path="/admin" element={
         <ProtectedRoute allowedRoles={['super_admin','psychologist','client_admin']}>
-          <AdminLayout />
+          <SourceGate>
+            <AdminLayout />
+          </SourceGate>
         </ProtectedRoute>
       }>
         <Route index element={<AdminDashboard />} />
+        <Route path="onboarding" element={<OnboardingPage />} />
         <Route path="items" element={<ItemBankPage />} />
         <Route path="items/upload" element={<ItemUploadPage />} />
         <Route path="batteries" element={<BatteriesPage />} />
@@ -74,12 +130,15 @@ function AppRoutes() {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="reports/:id" element={<ReportViewPage />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="sources" element={<SourcesPage />} />
+        <Route path="batches" element={<BatchesPage />} />
         <Route path="tokens" element={<TokenManagerPage />} />
         <Route path="shapes" element={<ShapeLibraryPage />} />
         <Route path="audit" element={<AuditPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="access-control" element={<AccessControlPage />} />
         <Route path="domain-instructions" element={<DomainInstructionsPage />} />
+        <Route path="report-config" element={<ReportConfigPage />} />
         <Route path="guardian-assign" element={<GuardianAssignPage />} />
       </Route>
 
@@ -127,7 +186,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <SourceProvider>
+          <BatchProvider>
+            <AppRoutes />
+          </BatchProvider>
+        </SourceProvider>
       </AuthProvider>
     </BrowserRouter>
   );

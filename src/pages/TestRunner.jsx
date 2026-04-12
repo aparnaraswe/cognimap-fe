@@ -1306,7 +1306,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
 
   const meta = DOMAIN_META[domain] || { icon: '📝', label: domainLabel, color: '#78716C', desc: 'Answer each question carefully.' };
   const cfgStatic = DOMAIN_CFG[domain] || {
-    abbr: domain.toUpperCase(), tagline: '', color: meta.color, bg: '#F3F0FB', dark: '#2B2B4A',
+    abbr: domain.toUpperCase(), tagline: '', color: meta.color, bg: '#e8f3ec', dark: '#3d6b52',
     time: '~7 min', items: 10, steps: [], tip: '', instructions: [],
     practiceQ: 'Sample question', practiceSub: '', practiceOpts: ['A','B','C','D'], practiceCorrect: 0, practiceExplain: '',
   };
@@ -1384,26 +1384,26 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
 
   // ── Shared CSS injected with every DomainIntro render ──
   const DOMAIN_INTRO_CSS = `
-    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-    .cg-shell{width:100%;max-width:1040px;height:clamp(540px,calc(100vh - 40px),690px);background:#FFFFFF;display:flex;flex-direction:column;border-radius:22px;overflow:hidden;box-shadow:0 1px 1px rgba(100,72,168,.06),0 4px 12px rgba(100,72,168,.08),0 16px 48px rgba(100,72,168,.14),0 0 0 1px rgba(100,72,168,.06);animation:cgSlideIn .3s cubic-bezier(.4,0,.2,1);}
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+    .cg-shell{width:100%;max-width:1040px;height:clamp(540px,calc(100vh - 40px),690px);background:#FFFFFF;display:flex;flex-direction:column;border-radius:20px;overflow:hidden;border:1px solid rgba(26,35,50,0.08);box-shadow:0 8px 48px rgba(26,35,50,0.09);animation:cgSlideIn .3s cubic-bezier(.4,0,.2,1);}
     .cg-split{display:flex;flex:1;min-height:0;}
     .cg-left{width:56%;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto;}
     .cg-right{flex:1;background:#FFFFFF;display:flex;flex-direction:column;overflow-y:auto;padding:28px 26px;}
-    .cg-btn-primary{background:#6448A8;color:#fff;border:none;border-radius:13px;padding:14px 22px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;width:100%;transition:background .15s,transform .1s,box-shadow .15s;box-shadow:0 4px 14px rgba(100,72,168,.28);letter-spacing:0.1px;}
-    .cg-btn-primary:hover{background:#5537A0;box-shadow:0 6px 20px rgba(100,72,168,.4);}
-    .cg-btn-primary:active{transform:scale(.98);}
-    .cg-btn-secondary{background:transparent;color:#555570;border:1.5px solid rgba(100,72,168,.15);border-radius:13px;padding:12px 22px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;width:100%;transition:background .15s,border-color .15s;}
-    .cg-btn-secondary:hover{background:#F3F0FB;border-color:#9278C0;}
+    .cg-btn-primary{background:#1a2332;color:#fff;border:none;border-radius:12px;padding:14px 22px;font-size:14px;font-weight:600;font-family:'DM Serif Display',serif;cursor:pointer;width:100%;transition:background .18s,transform .12s;letter-spacing:0.2px;}
+    .cg-btn-primary:hover{background:#2d3d52;}
+    .cg-btn-primary:active{transform:scale(.99);}
+    .cg-btn-secondary{background:transparent;color:#4a5568;border:1px solid rgba(26,35,50,0.08);border-radius:12px;padding:12px 22px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;width:100%;transition:background .15s,border-color .15s;}
+    .cg-btn-secondary:hover{background:#f0f2f5;border-color:#8898aa;}
     .cg-display{font-family:'DM Serif Display',Georgia,serif!important;font-weight:400!important;}
-    .cg-pill{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:0.3px;}
-    .cg-card{background:#F3F0FB;border-radius:13px;padding:16px;}
-    .cg-section-label{font-size:10px;font-weight:700;color:#9999AA;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px;display:block;}
-    .cg-step-item{display:flex;align-items:flex-start;gap:11px;font-size:13px;line-height:1.55;color:#555570;}
+    .cg-pill{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;letter-spacing:0.3px;}
+    .cg-card{background:#f5f2ed;border-radius:13px;padding:16px;}
+    .cg-section-label{font-size:10px;font-weight:600;color:#8898aa;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;display:block;}
+    .cg-step-item{display:flex;align-items:flex-start;gap:11px;font-size:13px;line-height:1.55;color:#4a5568;}
     .cg-step-num{width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;}
-    .cg-opt{border:2px solid rgba(100,72,168,.13);border-radius:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:80px;padding:10px 14px;transition:border-color .15s,background .15s,transform .1s,box-shadow .15s;background:#fff;font-size:13px;font-weight:500;color:#1A1A2E;text-align:center;gap:8px;}
-    .cg-opt:hover{border-color:#9278C0;transform:translateY(-2px);box-shadow:0 4px 14px rgba(100,72,168,.09);}
-    .cg-opt.correct{border-color:#1D9E75!important;background:#E1F5EE!important;color:#1D9E75!important;pointer-events:none;}
-    .cg-opt.incorrect{border-color:#D85A30!important;background:#FAECE7!important;color:#D85A30!important;pointer-events:none;}
+    .cg-opt{border:2px solid rgba(26,35,50,0.1);border-radius:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:80px;padding:10px 14px;transition:border-color .15s,background .15s,transform .1s,box-shadow .15s;background:#fff;font-size:13px;font-weight:500;color:#1a2332;text-align:center;gap:8px;}
+    .cg-opt:hover{border-color:#c97d5f;transform:translateY(-2px);box-shadow:0 4px 14px rgba(26,35,50,0.07);}
+    .cg-opt.correct{border-color:#5f8f72!important;background:#e8f3ec!important;color:#5f8f72!important;pointer-events:none;}
+    .cg-opt.incorrect{border-color:#c97d5f!important;background:#faeae4!important;color:#c97d5f!important;pointer-events:none;}
     .cg-opt.locked{pointer-events:none;opacity:0.6;}
     @keyframes cgSlideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
     @keyframes cgPopIn{0%{transform:scale(0.4);opacity:0}65%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
@@ -1411,14 +1411,25 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
     @media(max-width:680px){.cg-split{flex-direction:column}.cg-left{width:100%!important;max-height:50vh}.cg-right{padding:18px 20px}}
   `;
 
+  // ── Warm domain colors for section intro screens ──
+  const domainWarmColors = {
+    gf:  { bg: '#e8f3ec', color: '#5f8f72', dark: '#3d6b52' },
+    gv:  { bg: '#faeae4', color: '#c97d5f', dark: '#9b5f44' },
+    gq:  { bg: '#fef3dc', color: '#c9963e', dark: '#9a7230' },
+    gc:  { bg: '#e8f3ec', color: '#5f8f72', dark: '#3d6b52' },
+    gs:  { bg: '#faeae4', color: '#c97d5f', dark: '#9b5f44' },
+    gwm: { bg: '#eeecf8', color: '#8b7ec8', dark: '#5d5296' },
+  };
+  const warmCol = domainWarmColors[domain] || { bg: '#e8f3ec', color: '#5f8f72', dark: '#3d6b52' };
+
   // ── Shared shell wrapper ──
   const Shell = ({ children }) => (
     <div style={{
       width: '100%', height: '100vh',
-      background: '#E8E4F5',
-      backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(100,72,168,0.12), transparent)',
+      background: '#f5f2ed',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
-      fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+      fontFamily: "'DM Sans', sans-serif",
+      WebkitFontSmoothing: 'antialiased',
     }}>
       <style dangerouslySetInnerHTML={{ __html: DOMAIN_INTRO_CSS }} />
       <div className="cg-shell">{children}</div>
@@ -1431,8 +1442,8 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
       {Array.from({ length: domainsTotal }).map((_, i) => (
         <div key={i} style={{
           height: 5, flex: 1, borderRadius: 3,
-          background: i < domainsCompleted ? color : i === domainsCompleted ? color+'88' : '#F3F0FB',
-          border: '1px solid rgba(100,72,168,0.11)',
+          background: i < domainsCompleted ? warmCol.color : i === domainsCompleted ? warmCol.color+'88' : '#ede9e3',
+          border: '1px solid rgba(26,35,50,0.08)',
           transition: 'background .4s',
         }} />
       ))}
@@ -1445,17 +1456,18 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
       <Shell>
         <div className="cg-split">
           {/* Left: Domain identity + stats */}
-          <div className="cg-left" style={{ background: bg, borderRight: '1px solid rgba(100,72,168,0.11)', padding: '34px 30px', justifyContent: 'center' }}>
+          <div className="cg-left" style={{ background: '#fdfaf5', borderRight: '1px solid rgba(26,35,50,0.08)', padding: '34px 30px', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', right: -60, bottom: -60, width: 200, height: 200, borderRadius: '50%', background: `radial-gradient(circle, ${warmCol.color}15 0%, transparent 70%)`, pointerEvents: 'none' }} />
             <DomainDots />
-            <div style={{ width: 84, height: 84, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, border: `2px solid ${color}30`, filter: `drop-shadow(0 5px 14px ${color}33)`, fontSize: 38 }}>
+            <div style={{ width: 84, height: 84, borderRadius: '50%', background: warmCol.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, border: `2px solid ${warmCol.color}30`, filter: `drop-shadow(0 5px 14px ${warmCol.color}33)`, fontSize: 38, zIndex: 1 }}>
               {meta.icon}
             </div>
-            <span className="cg-pill" style={{ background: bg, color: dark, border: `1px solid ${color}40`, marginBottom: 11 }}>
+            <span className="cg-pill" style={{ background: warmCol.bg, color: warmCol.dark, border: `1px solid ${warmCol.color}40`, marginBottom: 11, zIndex: 1 }}>
               {cfg.abbr} · {cfg.tagline}
             </span>
-            <h2 className="cg-display" style={{ fontSize: 29, color: '#1A1A2E', marginBottom: 10 }}>{meta.label}</h2>
-            <p style={{ fontSize: 13, color: '#555570', lineHeight: 1.7, marginBottom: 22, maxWidth: 290 }}>{meta.desc}</p>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <h2 className="cg-display" style={{ fontSize: 29, color: '#1a2332', marginBottom: 10, zIndex: 1 }}>{meta.label}</h2>
+            <p style={{ fontSize: 13, color: '#4a5568', lineHeight: 1.7, marginBottom: 22, maxWidth: 290, zIndex: 1 }}>{meta.desc}</p>
+            <div style={{ display: 'flex', gap: 8, zIndex: 1 }}>
               {(() => {
                 const secInfo = batteryInfo?.sectionInfo?.[domain];
                 const dynTime = secInfo?.estimatedMinutes ? `~${secInfo.estimatedMinutes} min` : cfg.time;
@@ -1467,9 +1479,9 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                   ['Practice', `${dynPractice} item${dynPractice !== 1 ? 's' : ''}`],
                 ];
               })().map(([lbl, val]) => (
-                <div key={lbl} style={{ flex: 1, background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(100,72,168,0.11)', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
-                  <p style={{ fontSize: 10, color: '#9999AA', marginBottom: 3 }}>{lbl}</p>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#1A1A2E' }}>{val}</p>
+                <div key={lbl} style={{ flex: 1, background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(26,35,50,0.08)', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
+                  <p style={{ fontSize: 10, color: '#8898aa', marginBottom: 3 }}>{lbl}</p>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2332' }}>{val}</p>
                 </div>
               ))}
             </div>
@@ -1481,7 +1493,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {cfg.steps.map((s, i) => (
                   <div key={i} className="cg-step-item">
-                    <div className="cg-step-num" style={{ background: bg, color: dark }}>{i + 1}</div>
+                    <div className="cg-step-num" style={{ background: warmCol.bg, color: warmCol.dark }}>{i + 1}</div>
                     <span>{s}</span>
                   </div>
                 ))}
@@ -1502,19 +1514,19 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
       <Shell>
         <div className="cg-split">
           {/* Left: Steps */}
-          <div className="cg-left" style={{ background: '#F3F0FB', borderRight: '1px solid rgba(100,72,168,0.11)', padding: '34px 30px' }}>
+          <div className="cg-left" style={{ background: '#fdfaf5', borderRight: '1px solid rgba(26,35,50,0.08)', padding: '34px 30px' }}>
             <div style={{ marginBottom: 20 }}>
-              <span className="cg-pill" style={{ background: bg, color: dark, border: `1px solid ${color}40`, marginBottom: 11, display: 'inline-flex' }}>
+              <span className="cg-pill" style={{ background: warmCol.bg, color: warmCol.dark, border: `1px solid ${warmCol.color}40`, marginBottom: 11, display: 'inline-flex' }}>
                 {cfg.abbr} · Instructions
               </span>
-              <h2 className="cg-display" style={{ fontSize: 26, color: '#1A1A2E', marginBottom: 5 }}>How it works</h2>
-              <p style={{ fontSize: 12, color: '#9999AA' }}>Read these before you start</p>
+              <h2 className="cg-display" style={{ fontSize: 26, color: '#1a2332', marginBottom: 5 }}>How it works</h2>
+              <p style={{ fontSize: 12, color: '#8898aa' }}>Read these before you start</p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
               {cfg.instructions.map((s, i) => (
                 <div key={i} className="cg-step-item">
-                  <div className="cg-step-num" style={{ background: color, color: '#fff' }}>{i + 1}</div>
-                  <span style={{ color: '#1A1A2E', fontWeight: 500 }}>{s}</span>
+                  <div className="cg-step-num" style={{ background: warmCol.color, color: '#fff' }}>{i + 1}</div>
+                  <span style={{ color: '#1a2332', fontWeight: 500 }}>{s}</span>
                 </div>
               ))}
             </div>
@@ -1582,7 +1594,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
             fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
           }}>
           <style>{`
-            @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
             @keyframes popIn { 0% { transform: scale(0.82); opacity: 0; } 70% { transform: scale(1.04); } 100% { transform: scale(1); opacity: 1; } }
             @keyframes slideInCard { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
             .opt-thumb { display:flex!important; align-items:center!important; justify-content:center!important; overflow:hidden!important; border-radius:11px!important; }
@@ -1608,12 +1620,12 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
                 {/* ── LEFT: stimulus ── */}
-                <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, background: '#F3F0FB' }}>
+                <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, background: '#fdfaf5' }}>
                   {/* Domain chip */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, marginBottom: 8 }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px',
-                      borderRadius: 20, background: bg, border: `1px solid ${color}30`,
-                      fontSize: 10, fontWeight: 700, color: dark, letterSpacing: '0.3px' }}>
+                      borderRadius: 20, background: warmCol.bg, border: `1px solid ${warmCol.color}30`,
+                      fontSize: 10, fontWeight: 700, color: warmCol.dark, letterSpacing: '0.3px' }}>
                       {meta.icon} Practice
                     </div>
                   </div>
@@ -1630,7 +1642,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                   {/* Stimulus card */}
                   <div style={{
                     flex: 1, minHeight: 0, background: '#FFFFFF', borderRadius: 10,
-                    border: '1.5px solid rgba(100,72,168,0.11)',
+                    border: '1.5px solid rgba(26,35,50,0.08)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     padding: 4, overflow: 'hidden', position: 'relative',
                   }}>
@@ -1656,19 +1668,19 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                 </div>
 
                 {/* VERTICAL DIVIDER */}
-                <div style={{ background: 'rgba(100,72,168,0.11)', width: 1 }} />
+                <div style={{ background: 'rgba(26,35,50,0.08)', width: 1 }} />
 
                 {/* ── RIGHT: options ── */}
                 <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
                   {/* Header */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexShrink: 0 }}>
-                    <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(100,72,168,0.11)' }} />
+                    <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(26,35,50,0.08)' }} />
                     <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '1.2px',
                       color: gwmLocked ? color : '#9999AA',
                       textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                       {gwmLocked ? '🧠 Memorise the stimulus...' : 'Choose one answer'}
                     </span>
-                    <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(100,72,168,0.11)' }} />
+                    <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(26,35,50,0.08)' }} />
                   </div>
 
                   {/* Options — hidden during reveal, shown after */}
@@ -1701,14 +1713,14 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
               </div>
 
               {/* FOOTER */}
-              <div style={{ borderTop: '1px solid rgba(100,72,168,0.11)', padding: '10px 22px 14px',
+              <div style={{ borderTop: '1px solid rgba(26,35,50,0.08)', padding: '10px 22px 14px',
                 display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0,
                 background: '#FFFFFF', minHeight: 56 }}>
                 {!practiceAnswered && (
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8,
                     fontSize: 11, fontWeight: 600, color: '#9999AA' }}>
                     <span style={{ width: 26, height: 26, borderRadius: 8,
-                      background: '#F3F0FB', border: '1px solid rgba(100,72,168,0.15)',
+                      background: '#f5f2ed', border: '1px solid rgba(26,35,50,0.1)',
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>👆</span>
                     {gwmLocked ? 'Watch the stimulus carefully...' : 'Select an answer from the options'}
                   </div>
@@ -1749,12 +1761,12 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
     return (
       <div className="relative h-screen flex flex-col overflow-hidden"
         style={{
-          background: '#E8E4F5',
-          backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(100,72,168,0.10), transparent)',
-          fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+          background: '#f5f2ed',
+          fontFamily: "'DM Sans', sans-serif",
+          WebkitFontSmoothing: 'antialiased',
         }}>
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
           @keyframes popIn { 0% { transform: scale(0.82); opacity: 0; } 70% { transform: scale(1.04); } 100% { transform: scale(1); opacity: 1; } }
           @keyframes slideInCard { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
           .opt-thumb { display:flex!important; align-items:center!important; justify-content:center!important; overflow:hidden!important; border-radius:11px!important; }
@@ -1770,8 +1782,8 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
           <div style={{
             flex: 1, display: 'flex', flexDirection: 'column',
             background: '#FFFFFF', borderRadius: 18,
-            border: '1px solid rgba(100,72,168,0.11)',
-            boxShadow: '0 1px 1px rgba(100,72,168,0.06), 0 4px 12px rgba(100,72,168,0.08), 0 16px 40px rgba(100,72,168,0.10)',
+            border: '1px solid rgba(26,35,50,0.08)',
+            boxShadow: '0 1px 1px rgba(26,35,50,0.04), 0 4px 12px rgba(26,35,50,0.06), 0 16px 40px rgba(26,35,50,0.08)',
             animation: 'slideInCard 0.3s cubic-bezier(.4,0,.2,1)',
             overflow: 'hidden', position: 'relative', minHeight: 0,
           }}>
@@ -1806,7 +1818,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                 {/* Stimulus card */}
                 <div style={{
                   flex: 1, minHeight: 0, background: '#FFFFFF', borderRadius: 10,
-                  border: '1.5px solid rgba(100,72,168,0.11)',
+                  border: '1.5px solid rgba(26,35,50,0.08)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   padding: 4, overflow: 'hidden', position: 'relative',
                 }}>
@@ -1882,18 +1894,18 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
               </div>
 
               {/* VERTICAL DIVIDER */}
-              <div style={{ background: 'rgba(100,72,168,0.11)', width: 1 }} />
+              <div style={{ background: 'rgba(26,35,50,0.08)', width: 1 }} />
 
               {/* ── RIGHT: options ── */}
               <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
                 {/* Header */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexShrink: 0 }}>
-                  <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(100,72,168,0.11)' }} />
+                  <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(26,35,50,0.08)' }} />
                   <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '1.2px',
                     color: '#9999AA', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                     Choose one answer
                   </span>
-                  <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(100,72,168,0.11)' }} />
+                  <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(26,35,50,0.08)' }} />
                 </div>
 
                 {/* Options */}
@@ -1916,14 +1928,14 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
             </div>
 
             {/* FOOTER */}
-            <div style={{ borderTop: '1px solid rgba(100,72,168,0.11)', padding: '10px 22px 14px',
+            <div style={{ borderTop: '1px solid rgba(26,35,50,0.08)', padding: '10px 22px 14px',
               display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0,
               background: '#FFFFFF', minHeight: 56 }}>
               {!practiceAnswered && (
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8,
                   fontSize: 11, fontWeight: 600, color: '#9999AA' }}>
                   <span style={{ width: 26, height: 26, borderRadius: 8,
-                    background: '#F3F0FB', border: '1px solid rgba(100,72,168,0.15)',
+                    background: '#f5f2ed', border: '1px solid rgba(26,35,50,0.1)',
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>👆</span>
                   Select an answer from the options
                 </div>
@@ -1932,18 +1944,18 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{
                     flex: 1, padding: '9px 14px', borderRadius: 12, fontWeight: 700, fontSize: 12,
-                    background: selectedPracOpt === pracCorrect ? '#E1F5EE' : '#FAECE7',
-                    border: selectedPracOpt === pracCorrect ? '1.5px solid rgba(29,158,117,0.3)' : '1.5px solid rgba(216,90,48,0.3)',
-                    color: selectedPracOpt === pracCorrect ? '#1D9E75' : '#D85A30',
+                    background: selectedPracOpt === pracCorrect ? '#e8f3ec' : '#faeae4',
+                    border: selectedPracOpt === pracCorrect ? '1.5px solid rgba(95,143,114,0.3)' : '1.5px solid rgba(201,125,95,0.3)',
+                    color: selectedPracOpt === pracCorrect ? '#5f8f72' : '#c97d5f',
                   }}>
                     {selectedPracOpt === pracCorrect ? '✓ Correct!' : '✗ Not quite'}
                     {pracExplain && <span style={{ fontWeight: 400, marginLeft: 8 }}>— {pracExplain}</span>}
                   </div>
                   <button onClick={() => setStep('feedback')} style={{
                     padding: '10px 28px', borderRadius: 13, border: 'none', cursor: 'pointer',
-                    background: '#6448A8', color: '#fff', fontWeight: 600, fontSize: 14,
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    boxShadow: '0 4px 14px rgba(100,72,168,0.28)', flexShrink: 0,
+                    background: '#1a2332', color: '#fff', fontWeight: 600, fontSize: 14,
+                    fontFamily: "'DM Sans', sans-serif",
+                    flexShrink: 0,
                     animation: 'popIn 0.3s ease-out',
                   }}>
                     Continue →
@@ -1964,17 +1976,17 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
       <Shell>
         <div className="cg-split">
           {/* Left: Result indicator */}
-          <div className="cg-left" style={{ background: isPracCorrect ? '#E1F5EE' : '#FAECE7', padding: '34px 30px', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+          <div className="cg-left" style={{ background: isPracCorrect ? '#e8f3ec' : '#faeae4', padding: '34px 30px', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
             <div style={{ width: 78, height: 78, borderRadius: '50%', background: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18, animation: 'cgPopIn .5s cubic-bezier(0.34,1.56,0.64,1)' }}>
               {isPracCorrect
-                ? <svg width="38" height="38" viewBox="0 0 38 38"><path d="M6 19 L16 29 L32 11" stroke="#1D9E75" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                : <svg width="38" height="38" viewBox="0 0 38 38"><path d="M10 10 L28 28 M28 10 L10 28" stroke="#D85A30" strokeWidth="4" fill="none" strokeLinecap="round"/></svg>
+                ? <svg width="38" height="38" viewBox="0 0 38 38"><path d="M6 19 L16 29 L32 11" stroke="#5f8f72" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                : <svg width="38" height="38" viewBox="0 0 38 38"><path d="M10 10 L28 28 M28 10 L10 28" stroke="#c97d5f" strokeWidth="4" fill="none" strokeLinecap="round"/></svg>
               }
             </div>
-            <h2 className="cg-display" style={{ fontSize: 30, color: '#1A1A2E', marginBottom: 10 }}>
+            <h2 className="cg-display" style={{ fontSize: 30, color: '#1a2332', marginBottom: 10 }}>
               {isPracCorrect ? "That's correct!" : 'Not quite!'}
             </h2>
-            <p style={{ fontSize: 13, color: '#555570', lineHeight: 1.7, maxWidth: 270 }}>
+            <p style={{ fontSize: 13, color: '#4a5568', lineHeight: 1.7, maxWidth: 270 }}>
               {isPracCorrect ? 'Great reasoning! You identified the rule perfectly.' : "Here's why the correct answer works:"}
             </p>
           </div>
@@ -1982,7 +1994,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
           <div className="cg-right" style={{ justifyContent: 'space-between' }}>
             <div className="cg-card" style={{ flex: 1 }}>
               <p className="cg-section-label">The reasoning</p>
-              <p style={{ fontSize: 13, color: '#555570', lineHeight: 1.65 }}>{pracExplain || 'Review the options and think about the pattern before choosing your answer.'}</p>
+              <p style={{ fontSize: 13, color: '#4a5568', lineHeight: 1.65 }}>{pracExplain || 'Review the options and think about the pattern before choosing your answer.'}</p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18 }}>
               <button className="cg-btn-primary" onClick={() => setStep('ready')}>I'm Ready to Begin!</button>
@@ -1999,15 +2011,16 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
       <Shell>
         <div className="cg-split">
           {/* Left: Icon + identity */}
-          <div className="cg-left" style={{ background: bg, padding: '34px 30px', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-            <div style={{ width: 84, height: 84, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18, filter: `drop-shadow(0 6px 16px ${color}33)`, animation: 'cgPulse 2s ease-in-out infinite' }}>
-              <svg width="38" height="38" viewBox="0 0 38 38"><polygon points="10,6 32,19 10,32" fill={color}/></svg>
+          <div className="cg-left" style={{ background: '#fdfaf5', padding: '34px 30px', alignItems: 'center', justifyContent: 'center', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', right: -40, bottom: -40, width: 180, height: 180, borderRadius: '50%', background: `radial-gradient(circle, ${warmCol.color}12 0%, transparent 70%)`, pointerEvents: 'none' }} />
+            <div style={{ width: 84, height: 84, borderRadius: '50%', background: warmCol.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18, filter: `drop-shadow(0 6px 16px ${warmCol.color}33)`, animation: 'cgPulse 2s ease-in-out infinite', zIndex: 1 }}>
+              <svg width="38" height="38" viewBox="0 0 38 38"><polygon points="10,6 32,19 10,32" fill={warmCol.color}/></svg>
             </div>
-            <span className="cg-pill" style={{ background: bg, color: dark, border: `1px solid ${color}40`, marginBottom: 12 }}>
+            <span className="cg-pill" style={{ background: warmCol.bg, color: warmCol.dark, border: `1px solid ${warmCol.color}40`, marginBottom: 12, zIndex: 1 }}>
               {cfg.abbr} · {meta.label}
             </span>
-            <h2 className="cg-display" style={{ fontSize: 30, color: '#1A1A2E', marginBottom: 10 }}>You're all set!</h2>
-            <p style={{ fontSize: 13, color: '#555570', lineHeight: 1.7, maxWidth: 260 }}>
+            <h2 className="cg-display" style={{ fontSize: 30, color: '#1a2332', marginBottom: 10, zIndex: 1 }}>You're all set!</h2>
+            <p style={{ fontSize: 13, color: '#4a5568', lineHeight: 1.7, maxWidth: 260, zIndex: 1 }}>
               The real questions begin now. Trust your instincts — there's always one right answer.
             </p>
           </div>
@@ -2015,7 +2028,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
           <div className="cg-right" style={{ justifyContent: 'center', gap: 20 }}>
             <div>
               <p className="cg-section-label" style={{ textAlign: 'center' }}>Strategy tip</p>
-              <div style={{ borderRadius: 13, padding: '14px 18px', fontSize: 13, fontWeight: 500, lineHeight: 1.6, textAlign: 'center', width: '100%', background: bg, color: dark, border: `1px solid ${color}30` }}>
+              <div style={{ borderRadius: 13, padding: '14px 18px', fontSize: 13, fontWeight: 500, lineHeight: 1.6, textAlign: 'center', width: '100%', background: warmCol.bg, color: warmCol.dark, border: `1px solid ${warmCol.color}30` }}>
                 {cfg.tip}
               </div>
             </div>
@@ -2041,34 +2054,34 @@ function ResultsScreen({ scores, onDone }) {
   return (
     <div style={{
       width: '100%', height: '100vh',
-      background: '#E8E4F5',
-      backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(100,72,168,0.12), transparent)',
+      background: '#f5f2ed',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 20, fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+      padding: 20, fontFamily: "'DM Sans', sans-serif",
+      WebkitFontSmoothing: 'antialiased',
     }}>
       <style>{`@keyframes cgScaleIn { from { transform: scale(0.88); opacity: 0; } to { transform: scale(1); opacity: 1; } }`}</style>
       <div style={{
         width: '100%', maxWidth: 600, background: '#FFFFFF',
-        borderRadius: 22, padding: 40, textAlign: 'center',
-        border: '1px solid rgba(100,72,168,0.11)',
-        boxShadow: '0 1px 1px rgba(100,72,168,0.06), 0 4px 12px rgba(100,72,168,0.08), 0 16px 48px rgba(100,72,168,0.14)',
+        borderRadius: 20, padding: 40, textAlign: 'center',
+        border: '1px solid rgba(26,35,50,0.08)',
+        boxShadow: '0 8px 48px rgba(26,35,50,0.09)',
         animation: 'cgScaleIn 0.35s ease-out',
       }}>
         {/* Final illustration */}
-        <svg width="84" height="84" viewBox="0 0 96 96" style={{ marginBottom: 16, filter: 'drop-shadow(0 8px 24px rgba(100,72,168,0.28))' }}>
-          <circle cx="48" cy="48" r="44" fill="#EEEDFE"/>
-          <circle cx="33" cy="40" r="8" fill="#6448A8"/>
-          <circle cx="63" cy="40" r="8" fill="#6448A8"/>
-          <circle cx="48" cy="60" r="8" fill="#9278C0"/>
-          <circle cx="18" cy="58" r="5" fill="#9278C0" opacity=".35"/>
-          <circle cx="78" cy="58" r="5" fill="#9278C0" opacity=".35"/>
+        <svg width="84" height="84" viewBox="0 0 96 96" style={{ marginBottom: 16, filter: 'drop-shadow(0 8px 24px rgba(26,35,50,0.15))' }}>
+          <circle cx="48" cy="48" r="44" fill="#e8f3ec"/>
+          <circle cx="33" cy="40" r="8" fill="#5f8f72"/>
+          <circle cx="63" cy="40" r="8" fill="#5f8f72"/>
+          <circle cx="48" cy="60" r="8" fill="#c97d5f"/>
+          <circle cx="18" cy="58" r="5" fill="#a8ccb4" opacity=".5"/>
+          <circle cx="78" cy="58" r="5" fill="#a8ccb4" opacity=".5"/>
         </svg>
-        <p style={{ fontSize: 10, letterSpacing: '2.5px', color: '#9278C0', fontWeight: 700, textTransform: 'uppercase', marginBottom: 8 }}>Assessment Complete</p>
-        <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 36, color: '#1A1A2E', lineHeight: 1.15, marginBottom: 12 }}>Amazing work!</h2>
+        <p style={{ fontSize: 10, letterSpacing: '2.5px', color: '#5f8f72', fontWeight: 600, textTransform: 'uppercase', marginBottom: 8 }}>Assessment Complete</p>
+        <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 36, color: '#1a2332', lineHeight: 1.15, marginBottom: 12 }}>Amazing work!</h2>
         {globalScore && (
-          <div style={{ margin: '16px 0', padding: '14px 0', borderTop: '1px solid rgba(100,72,168,0.11)', borderBottom: '1px solid rgba(100,72,168,0.11)' }}>
-            <div style={{ fontSize: 36, fontWeight: 700, color: '#6448A8' }}>{parseFloat(globalScore.raw_score).toFixed(2)}</div>
-            <div style={{ fontSize: 13, color: '#555570', marginTop: 4 }}>{globalScore.descriptor}</div>
+          <div style={{ margin: '16px 0', padding: '14px 0', borderTop: '1px solid rgba(26,35,50,0.08)', borderBottom: '1px solid rgba(26,35,50,0.08)' }}>
+            <div style={{ fontSize: 36, fontWeight: 700, color: '#5f8f72' }}>{parseFloat(globalScore.raw_score).toFixed(2)}</div>
+            <div style={{ fontSize: 13, color: '#4a5568', marginTop: 4 }}>{globalScore.descriptor}</div>
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20, textAlign: 'left' }}>
@@ -2078,17 +2091,17 @@ function ResultsScreen({ scores, onDone }) {
             const theta = parseFloat(s.raw_score);
             const pct = Math.max(0, Math.min(100, ((theta + 3) / 6) * 100));
             return (
-              <div key={s.id || s.trait_or_dim} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 12, background: '#F3F0FB', border: '1px solid rgba(100,72,168,0.11)' }}>
+              <div key={s.id || s.trait_or_dim} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 12, background: '#f5f2ed', border: '1px solid rgba(26,35,50,0.08)' }}>
                 <span style={{ fontSize: 18 }}>{dm.icon || '📊'}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#555570', marginBottom: 4 }}>{dm.label || s.domain}</div>
-                  <div style={{ height: 5, borderRadius: 3, overflow: 'hidden', background: 'rgba(100,72,168,0.12)' }}>
-                    <div style={{ height: '100%', borderRadius: 3, width: `${pct}%`, background: dcfg.color || dm.color || '#6448A8', transition: 'width 1s ease' }} />
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#4a5568', marginBottom: 4 }}>{dm.label || s.domain}</div>
+                  <div style={{ height: 5, borderRadius: 3, overflow: 'hidden', background: '#ede9e3' }}>
+                    <div style={{ height: '100%', borderRadius: 3, width: `${pct}%`, background: dcfg.color || dm.color || '#5f8f72', transition: 'width 1s ease' }} />
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'monospace', color: '#1A1A2E' }}>{theta.toFixed(2)}</div>
-                  <div style={{ fontSize: 10, color: '#9999AA' }}>{s.descriptor}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'monospace', color: '#1a2332' }}>{theta.toFixed(2)}</div>
+                  <div style={{ fontSize: 10, color: '#8898aa' }}>{s.descriptor}</div>
                 </div>
               </div>
             );
@@ -2096,28 +2109,28 @@ function ResultsScreen({ scores, onDone }) {
         </div>
         {clusters.length > 0 && (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.2px', color: '#9999AA', marginBottom: 8 }}>Aptitude Clusters</div>
+            <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '2px', color: '#8898aa', marginBottom: 8 }}>Aptitude Clusters</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
               {clusters.map(c => (
-                <div key={c.trait_or_dim} style={{ padding: '6px 14px', borderRadius: 10, background: '#EEEDFE', border: '1px solid rgba(100,72,168,0.2)' }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'monospace', color: '#6448A8' }}>{parseFloat(c.raw_score).toFixed(2)}</div>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: '#9278C0', textTransform: 'capitalize' }}>{c.trait_or_dim}</div>
+                <div key={c.trait_or_dim} style={{ padding: '6px 14px', borderRadius: 10, background: '#e8f3ec', border: '1px solid rgba(95,143,114,0.2)' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'monospace', color: '#5f8f72' }}>{parseFloat(c.raw_score).toFixed(2)}</div>
+                  <div style={{ fontSize: 9, fontWeight: 600, color: '#a8ccb4', textTransform: 'capitalize' }}>{c.trait_or_dim}</div>
                 </div>
               ))}
             </div>
           </div>
         )}
         <button onClick={onDone} style={{
-          padding: '14px 40px', borderRadius: 13, border: 'none', cursor: 'pointer',
-          background: '#6448A8', color: '#fff', fontWeight: 600, fontSize: 14,
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
-          boxShadow: '0 4px 14px rgba(100,72,168,0.28)', transition: 'background 0.15s',
+          padding: '14px 40px', borderRadius: 12, border: 'none', cursor: 'pointer',
+          background: '#1a2332', color: '#fff', fontWeight: 600, fontSize: 14,
+          fontFamily: "'DM Serif Display', serif",
+          letterSpacing: '0.2px', transition: 'background 0.18s',
         }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#5537A0'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = '#6448A8'; }}>
-          View My Results ✓
+          onMouseEnter={e => { e.currentTarget.style.background = '#2d3d52'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = '#1a2332'; }}>
+          View My Results
         </button>
-        <p style={{ fontSize: 11, color: '#9999AA', marginTop: 12 }}>Thank you for your focus and effort today</p>
+        <p style={{ fontSize: 11, color: '#8898aa', marginTop: 12 }}>Thank you for your focus and effort today</p>
       </div>
     </div>
   );
@@ -2127,98 +2140,156 @@ function ResultsScreen({ scores, onDone }) {
 // WELCOME SCREEN — CogniMap Design v3
 // ═══════════════════════════════════════════
 function WelcomeScreen({ testType, batteryInfo, onStart }) {
-  // ── CogniMap Design v3 — two-panel landscape shell ──
-  const assessmentMeta = {
-    cognitive:   { subtitle: 'Cognitive Aptitude Battery' },
-    personality: { subtitle: 'Personality Profile' },
-    interest:    { subtitle: 'Interest Inventory' },
-  }[testType] || { subtitle: 'Assessment' };
+  const sectionDots = [
+    { label: 'Verbal reasoning',  color: '#5f8f72' },
+    { label: 'Numerical aptitude', color: '#c97d5f' },
+    { label: 'Abstract thinking',  color: '#c9963e' },
+    { label: 'Working memory',     color: '#8b7ec8' },
+    { label: 'Spatial reasoning',  color: '#8fa8d0' },
+    { label: 'Processing speed',   color: '#a8ccb4' },
+  ];
 
   return (
     <div style={{
       width: '100%', height: '100vh',
-      background: '#E8E4F5',
-      backgroundImage: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(100,72,168,0.12), transparent)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
-      fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
+      background: '#f5f2ed',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '32px 20px',
+      fontFamily: "'DM Sans', sans-serif",
+      WebkitFontSmoothing: 'antialiased',
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-        .cg-shell { width:100%; max-width:1040px; height:clamp(540px,calc(100vh - 40px),690px); background:#FFFFFF; display:flex; flex-direction:column; border-radius:22px; overflow:hidden; box-shadow:0 1px 1px rgba(100,72,168,.06),0 4px 12px rgba(100,72,168,.08),0 16px 48px rgba(100,72,168,.14),0 0 0 1px rgba(100,72,168,.06); animation:cgSlideIn .3s cubic-bezier(.4,0,.2,1); }
-        .cg-split { display:flex; flex:1; min-height:0; }
-        .cg-left  { width:56%; flex-shrink:0; display:flex; flex-direction:column; }
-        .cg-right { flex:1; background:#FFFFFF; display:flex; flex-direction:column; overflow-y:auto; padding:28px 26px; }
-        .cg-btn-primary { background:#6448A8; color:#fff; border:none; border-radius:13px; padding:14px 22px; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; width:100%; transition:background .15s,transform .1s,box-shadow .15s; box-shadow:0 4px 14px rgba(100,72,168,.28); letter-spacing:0.1px; }
-        .cg-btn-primary:hover { background:#5537A0; box-shadow:0 6px 20px rgba(100,72,168,.4); }
-        .cg-btn-primary:active { transform:scale(.98); }
-        .cg-btn-secondary { background:transparent; color:#555570; border:1.5px solid rgba(100,72,168,.11); border-radius:13px; padding:12px 22px; font-size:13px; font-weight:500; font-family:inherit; cursor:pointer; width:100%; transition:background .15s,border-color .15s; }
-        .cg-btn-secondary:hover { background:#F3F0FB; border-color:#9278C0; }
-        .cg-display { font-family:'DM Serif Display',Georgia,serif; font-weight:400; }
-        .cg-pill { display:inline-flex; align-items:center; font-size:11px; font-weight:700; padding:4px 12px; border-radius:20px; letter-spacing:0.3px; }
-        .cg-info-row { display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:9px 0; border-bottom:1px solid rgba(100,72,168,.07); }
-        .cg-info-row:last-child { border-bottom:none; padding-bottom:0; }
-        .cg-step-item { display:flex; align-items:flex-start; gap:11px; font-size:13px; line-height:1.55; color:#555570; }
-        .cg-step-num { width:25px; height:25px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; margin-top:1px; }
-        .cg-option { border:2px solid rgba(100,72,168,.11); border-radius:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; min-height:98px; padding:10px; transition:border-color .15s,background .15s,transform .1s,box-shadow .15s; background:#fff; }
-        .cg-option:hover { border-color:#9278C0; transform:translateY(-2px); box-shadow:0 4px 14px rgba(100,72,168,.09); }
-        .cg-option.correct { border-color:#1D9E75!important; background:#E1F5EE!important; pointer-events:none; }
-        .cg-option.incorrect { border-color:#D85A30!important; background:#FAECE7!important; pointer-events:none; }
-        .cg-option.locked { pointer-events:none; }
-        .cg-card { background:#F3F0FB; border-radius:13px; padding:16px; }
-        .cg-section-label { font-size:10px; font-weight:700; color:#9999AA; text-transform:uppercase; letter-spacing:1.2px; margin-bottom:10px; }
-        @keyframes cgSlideIn    { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
-        @keyframes cgSlideBack  { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
-        @keyframes cgPopIn      { 0%{transform:scale(0.4);opacity:0} 65%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
-        @keyframes cgPulse      { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.04);opacity:0.85} }
-        @keyframes cgDrawCheck  { to{stroke-dashoffset:0} }
-        @media(max-width:620px){ .cg-split{flex-direction:column} .cg-left{width:100%!important;border-right:none!important;border-bottom:1px solid rgba(100,72,168,.11)} .cg-right{padding:22px 20px} }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+        .wi-shell { width:100%; max-width:980px; display:grid; grid-template-columns:1fr 380px; min-height:580px; border-radius:20px; overflow:hidden; border:1px solid rgba(26,35,50,0.08); box-shadow:0 8px 48px rgba(26,35,50,0.09); }
+        .wi-left { background:#fdfaf5; padding:48px 44px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden; border-right:1px solid rgba(26,35,50,0.08); }
+        .wi-left::before { content:''; position:absolute; right:-60px; bottom:-60px; width:260px; height:260px; border-radius:50%; background:radial-gradient(circle, rgba(95,143,114,0.1) 0%, transparent 70%); pointer-events:none; }
+        .wi-left::after { content:''; position:absolute; left:-40px; top:40px; width:180px; height:180px; border-radius:50%; background:radial-gradient(circle, rgba(201,125,95,0.07) 0%, transparent 70%); pointer-events:none; }
+        .wi-right { background:#ffffff; padding:48px 40px; display:flex; flex-direction:column; justify-content:center; }
+        .wi-back { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:#8898aa; cursor:pointer; margin-bottom:40px; transition:color .15s; background:none; border:none; font-family:'DM Sans',sans-serif; padding:0; }
+        .wi-back:hover { color:#4a5568; }
+        .wi-brand { font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:#5f8f72; font-weight:600; margin-bottom:14px; }
+        .wi-headline { font-family:'DM Serif Display',serif; font-size:36px; color:#1a2332; line-height:1.2; letter-spacing:-0.3px; margin-bottom:16px; }
+        .wi-headline em { color:#c97d5f; font-style:italic; }
+        .wi-desc { font-size:14px; color:#4a5568; line-height:1.7; max-width:340px; margin-bottom:32px; }
+        .wi-pills-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#8898aa; margin-bottom:8px; }
+        .wi-pills { display:flex; gap:8px; flex-wrap:wrap; }
+        .wi-spill { display:flex; align-items:center; gap:6px; padding:7px 13px; background:#ffffff; border:1px solid rgba(26,35,50,0.08); border-radius:20px; font-size:12px; color:#4a5568; font-weight:400; }
+        .wi-spill-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+        .wi-right-label { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#8898aa; margin-bottom:20px; }
+        .wi-info-rows { display:flex; flex-direction:column; border:1px solid rgba(26,35,50,0.08); border-radius:12px; overflow:hidden; margin-bottom:28px; }
+        .wi-info-row { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid rgba(26,35,50,0.08); transition:background .12s; }
+        .wi-info-row:last-child { border-bottom:none; }
+        .wi-info-row:hover { background:#f5f2ed; }
+        .wi-info-key { font-size:13px; color:#8898aa; display:flex; align-items:center; gap:8px; }
+        .wi-info-key svg { width:13px; height:13px; stroke:#8898aa; fill:none; stroke-width:1.6; flex-shrink:0; }
+        .wi-info-val { font-size:13px; font-weight:600; color:#1a2332; }
+        .wi-divider { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
+        .wi-divider-line { flex:1; height:1px; background:rgba(26,35,50,0.08); }
+        .wi-divider-text { font-size:11px; color:#8898aa; }
+        .wi-reassurances { display:flex; flex-direction:column; gap:8px; margin-bottom:28px; }
+        .wi-reassure { display:flex; align-items:center; gap:9px; font-size:12.5px; color:#4a5568; }
+        .wi-reassure svg { width:14px; height:14px; stroke:#5f8f72; fill:none; stroke-width:1.8; flex-shrink:0; }
+        .wi-begin { width:100%; padding:15px; background:#1a2332; color:white; border:none; border-radius:12px; font-size:14px; font-weight:600; font-family:'DM Serif Display',serif; cursor:pointer; letter-spacing:0.2px; transition:background .18s, transform .12s; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .wi-begin:hover { background:#2d3d52; }
+        .wi-begin:active { transform:scale(0.99); }
+        .wi-begin svg { width:15px; height:15px; stroke:white; fill:none; stroke-width:2; }
+        .wi-note { text-align:center; font-size:11.5px; color:#8898aa; margin-top:12px; }
+        @keyframes wiFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        .wi-left > *:nth-child(1) { animation:wiFadeUp .5s .05s ease both; }
+        .wi-pills { animation:wiFadeUp .5s .15s ease both; }
+        .wi-right-label { animation:wiFadeUp .45s .08s ease both; }
+        .wi-info-rows { animation:wiFadeUp .45s .14s ease both; }
+        .wi-divider { animation:wiFadeUp .45s .20s ease both; }
+        .wi-reassurances { animation:wiFadeUp .45s .24s ease both; }
+        .wi-begin { animation:wiFadeUp .45s .30s ease both; }
+        .wi-note { animation:wiFadeUp .45s .34s ease both; }
+        @media(max-width:620px) { .wi-shell { grid-template-columns:1fr; } .wi-left { border-right:none; border-bottom:1px solid rgba(26,35,50,0.08); padding:32px 28px; } .wi-right { padding:32px 28px; } }
       `}</style>
 
-      <div className="cg-shell">
-        <div className="cg-split">
+      <div className="wi-shell">
 
-          {/* Left: Rich branding panel */}
-          <div className="cg-left" style={{
-            background: 'linear-gradient(148deg, #2B1E6E 0%, #5438A2 52%, #7B5CC0 100%)',
-            padding: '34px 30px', justifyContent: 'center',
-          }}>
-            <svg width="68" height="68" viewBox="0 0 84 84" style={{ marginBottom: 22, filter: 'drop-shadow(0 6px 20px rgba(0,0,0,0.22))' }}>
-              <circle cx="42" cy="42" r="40" fill="rgba(255,255,255,0.1)"/>
-              <circle cx="30" cy="34" r="10" fill="rgba(255,255,255,0.88)"/>
-              <circle cx="54" cy="34" r="10" fill="rgba(255,255,255,0.55)"/>
-              <path d="M22 52 Q42 68 62 52" stroke="rgba(255,255,255,0.75)" strokeWidth="3" fill="none" strokeLinecap="round"/>
-              <circle cx="30" cy="34" r="4" fill="rgba(80,40,160,0.35)"/>
-              <circle cx="54" cy="34" r="3" fill="rgba(80,40,160,0.25)"/>
-            </svg>
-            <p style={{ fontSize: 10, letterSpacing: 3, color: 'rgba(255,255,255,0.5)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 10 }}>CogniMap</p>
-            <h1 className="cg-display" style={{ fontSize: 40, color: '#fff', lineHeight: 1.15, marginBottom: 14 }}>Discover how<br/>your mind works</h1>
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.72, maxWidth: 300 }}>
-              A journey through {batteryInfo ? batteryInfo.sectionCount : '—'} sections — designed just for you. No right or wrong, just your best thinking.
-            </p>
+        {/* LEFT */}
+        <div className="wi-left">
+          <div style={{ zIndex: 1 }}>
+            <button className="wi-back" onClick={() => window.history.back()}>
+              <svg viewBox="0 0 14 14" width="14" height="14"><path d="M9 2L4 7l5 5" stroke="currentColor" fill="none" strokeWidth="1.6"/></svg>
+              Back to dashboard
+            </button>
+
+            <div className="wi-brand">CogniMap · Assessment</div>
+
+            <div className="wi-headline">
+              Discover how<br/>
+              your <em>mind works</em>
+            </div>
+
+            <div className="wi-desc">
+              A journey through {batteryInfo ? batteryInfo.sectionCount : '—'} sections — designed just for you.<br/>
+              No right or wrong answers, just your best thinking.
+            </div>
           </div>
 
-          {/* Right: Info + CTA */}
-          <div className="cg-right" style={{ justifyContent: 'center', gap: 0 }}>
-            <p style={{ fontSize: 11, letterSpacing: '1.5px', color: '#9278C0', fontWeight: 700, textTransform: 'uppercase', marginBottom: 14 }}>About this assessment</p>
-            <div style={{ background: '#F3F0FB', borderRadius: 14, padding: '4px 16px', marginBottom: 22, border: '1.5px solid rgba(100,72,168,0.11)' }}>
-              {[
-                ['Total time',      batteryInfo ? `~${batteryInfo.estimatedMinutes} minutes` : '—'],
-                ['Questions',       batteryInfo?.totalItems ? `${batteryInfo.totalItems} questions` : '—'],
-                ['Sections',        batteryInfo ? `${batteryInfo.sectionCount} section${batteryInfo.sectionCount !== 1 ? 's' : ''}` : '—'],
-                ['Practice rounds', batteryInfo?.hasPracticeItems ? 'Before every section' : 'Not included'],
-                ['Short breaks',    batteryInfo?.hasBreaks ? 'Between sections' : 'None'],
-              ].map(([lbl, val]) => (
-                <div key={lbl} className="cg-info-row">
-                  <span style={{ color: '#555570' }}>{lbl}</span>
-                  <span style={{ fontWeight: 700, color: '#1A1A2E' }}>{val}</span>
+          <div style={{ zIndex: 1 }}>
+            <div className="wi-pills-label">What you'll explore</div>
+            <div className="wi-pills">
+              {sectionDots.map(s => (
+                <div key={s.label} className="wi-spill">
+                  <div className="wi-spill-dot" style={{ background: s.color }} />
+                  {s.label}
                 </div>
               ))}
             </div>
-            <button className="cg-btn-primary" onClick={onStart}>Begin Assessment</button>
-            <p style={{ fontSize: 12, color: '#9999AA', marginTop: 12, textAlign: 'center' }}>Take it at your own pace</p>
+          </div>
+        </div>
+
+        {/* RIGHT */}
+        <div className="wi-right">
+          <div className="wi-right-label">About this assessment</div>
+
+          <div className="wi-info-rows">
+            {[
+              { icon: <svg viewBox="0 0 13 13"><circle cx="6.5" cy="6.5" r="5.5"/><path d="M6.5 3.5V6.5l2 2"/></svg>, label: 'Total time', val: batteryInfo ? `~${batteryInfo.estimatedMinutes} minutes` : '—' },
+              { icon: <svg viewBox="0 0 13 13"><path d="M2 10V4a1 1 0 011-1h7a1 1 0 011 1v6"/><path d="M1 10h11"/><path d="M5 6h3"/><path d="M5 8h2"/></svg>, label: 'Questions', val: batteryInfo?.totalItems ? `${batteryInfo.totalItems} questions` : '—' },
+              { icon: <svg viewBox="0 0 13 13"><rect x="1.5" y="1.5" width="4" height="4" rx="1"/><rect x="7.5" y="1.5" width="4" height="4" rx="1"/><rect x="1.5" y="7.5" width="4" height="4" rx="1"/><rect x="7.5" y="7.5" width="4" height="4" rx="1"/></svg>, label: 'Sections', val: batteryInfo ? `${batteryInfo.sectionCount} section${batteryInfo.sectionCount !== 1 ? 's' : ''}` : '—' },
+              { icon: <svg viewBox="0 0 13 13"><path d="M6.5 1v2M6.5 10v2M1 6.5h2M10 6.5h2"/><circle cx="6.5" cy="6.5" r="3"/></svg>, label: 'Practice rounds', val: batteryInfo?.hasPracticeItems ? 'Before every section' : 'Not included' },
+              { icon: <svg viewBox="0 0 13 13"><path d="M2 6.5h9M8 4l3 2.5L8 9"/></svg>, label: 'Short breaks', val: batteryInfo?.hasBreaks ? 'Between sections' : 'None' },
+            ].map(row => (
+              <div key={row.label} className="wi-info-row">
+                <span className="wi-info-key">{row.icon}{row.label}</span>
+                <span className="wi-info-val">{row.val}</span>
+              </div>
+            ))}
           </div>
 
+          <div className="wi-divider">
+            <div className="wi-divider-line" />
+            <span className="wi-divider-text">before you begin</span>
+            <div className="wi-divider-line" />
+          </div>
+
+          <div className="wi-reassurances">
+            <div className="wi-reassure">
+              <svg viewBox="0 0 14 14"><path d="M2 7l3 3 7-6"/></svg>
+              Your progress is saved automatically
+            </div>
+            <div className="wi-reassure">
+              <svg viewBox="0 0 14 14"><path d="M2 7l3 3 7-6"/></svg>
+              You can pause and return any time
+            </div>
+            <div className="wi-reassure">
+              <svg viewBox="0 0 14 14"><path d="M2 7l3 3 7-6"/></svg>
+              Find a quiet space with no distractions
+            </div>
+          </div>
+
+          <button className="wi-begin" onClick={onStart}>
+            Begin assessment
+            <svg viewBox="0 0 15 15"><path d="M3 7.5h9M9 4l4 3.5L9 11"/></svg>
+          </button>
+
+          <div className="wi-note">Take it at your own pace · No time pressure</div>
         </div>
+
       </div>
     </div>
   );
@@ -2850,13 +2921,13 @@ export default function TestRunner() {
             <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexShrink: 0 }}>
-                <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(100,72,168,0.11)' }} />
+                <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(26,35,50,0.08)' }} />
                 <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '1.2px',
                   color: memoryOptionsLocked ? cgColor : '#9999AA',
                   textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                   {memoryOptionsLocked ? '🧠 Memorise the stimulus...' : 'Choose one answer'}
                 </span>
-                <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(100,72,168,0.11)' }} />
+                <hr style={{ flex: 1, border: 'none', borderTop: '1px solid rgba(26,35,50,0.08)' }} />
               </div>
 
               {/* Options list — completely hidden during GWM memory reveal, shown after */}
@@ -2891,7 +2962,7 @@ export default function TestRunner() {
           </div>
 
           {/* ── FOOTER ── */}
-          <div style={{ borderTop: '1px solid rgba(100,72,168,0.11)', padding: '10px 22px 14px',
+          <div style={{ borderTop: '1px solid rgba(26,35,50,0.08)', padding: '10px 22px 14px',
             display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0,
             background: '#FFFFFF', minHeight: 56 }}>
 

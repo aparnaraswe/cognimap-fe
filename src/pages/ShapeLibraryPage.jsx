@@ -5,42 +5,33 @@
  *   1. Select Category (Cognitive / Personality / Interest)
  *   2. Select Domain (Gf, Gv, Gs, Gwm, Gq)
  *   3. Select or create Template (matrix_2x2, odd_one_out, etc.)
- *   4. Enter Item Number
- *   5. Upload 4 SVGs: stim, optA, optB, optC
- *   6. Browse existing uploads
+ *   4. Upload 4 SVGs: stim, optA, optB, optC
+ *   5. Browse existing uploads
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  Folder, FolderOpen, Upload, Image as ImageIcon, X, ChevronRight,
+  CheckCircle2, XCircle, FileImage, Trash2, Plus, ArrowLeft, Inbox
+} from 'lucide-react';
 
 const API = import.meta.env.VITE_API_BASE || 'http://localhost:3000/api';
 
-const C = {
-  bg:        '#F6F5F1',
-  surface:   '#FFFFFF',
-  border:    '#E2E0D8',
-  text:      '#1C1B18',
-  muted:     '#6B6860',
-  accent:    '#4F46E5',
-  accentHov: '#4338CA',
-  green:     '#10B981',
-  red:       '#EF4444',
-};
-
 /* ── Domain / category config ── */
 const CATEGORIES = {
-  cognitive:   { label: 'Cognitive', icon: '🧠', domains: ['gf', 'gv', 'gs', 'gwm', 'gq'] },
-  personality: { label: 'Personality', icon: '🎭', domains: ['personality'] },
-  interest:    { label: 'Interest', icon: '🎯', domains: ['interest'] },
+  cognitive:   { label: 'Cognitive',   description: 'Pattern reasoning and visual processing', domains: ['gf', 'gv', 'gs', 'gwm', 'gq'] },
+  personality: { label: 'Personality', description: 'Personality trait items', domains: ['personality'] },
+  interest:    { label: 'Interest',    description: 'Interest and preference items', domains: ['interest'] },
 };
 
 const DOMAINS = {
-  gf:  { label: 'Gf — Pattern Reasoning', icon: '🧩', color: '#6366F1' },
-  gv:  { label: 'Gv — Visual Processing',  icon: '👁️', color: '#8B5CF6' },
-  gs:  { label: 'Gs — Processing Speed',   icon: '⚡', color: '#F59E0B' },
-  gwm: { label: 'Gwm — Working Memory',    icon: '🧠', color: '#EC4899' },
-  gq:  { label: 'Gq — Quantitative',       icon: '🔢', color: '#14B8A6' },
-  personality: { label: 'Personality', icon: '🎭', color: '#6B7280' },
-  interest:    { label: 'Interest',    icon: '🎯', color: '#6B7280' },
+  gf:  { label: 'Gf — Pattern Reasoning' },
+  gv:  { label: 'Gv — Visual Processing' },
+  gs:  { label: 'Gs — Processing Speed' },
+  gwm: { label: 'Gwm — Working Memory' },
+  gq:  { label: 'Gq — Quantitative' },
+  personality: { label: 'Personality' },
+  interest:    { label: 'Interest' },
 };
 
 const FILE_SLOTS = [
@@ -64,17 +55,13 @@ function sanitize(name) {
 /* ── Toast ── */
 function Toast({ msg, type, onDone }) {
   useEffect(() => { const t = setTimeout(onDone, 3200); return () => clearTimeout(t); }, [msg]);
+  const ok = type === 'ok';
   return (
-    <div style={{
-      position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
-      padding: '11px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500,
-      display: 'flex', alignItems: 'center', gap: 8, maxWidth: 360,
-      boxShadow: '0 8px 24px rgba(0,0,0,.12)',
-      background: type === 'ok' ? '#ECFDF5' : '#FEF2F2',
-      border: `1px solid ${type === 'ok' ? '#6EE7B7' : '#FCA5A5'}`,
-      color: type === 'ok' ? '#065F46' : '#991B1B',
-    }}>
-      <span>{type === 'ok' ? '✓' : '✕'}</span><span>{msg}</span>
+    <div className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold shadow-xl border ${
+      ok ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-700'
+    }`}>
+      {ok ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+      <span>{msg}</span>
     </div>
   );
 }
@@ -82,15 +69,15 @@ function Toast({ msg, type, onDone }) {
 /* ═══ MAIN PAGE ═══ */
 export default function ShapeLibraryPage() {
   // Wizard state
-  const [category, setCategory]     = useState(null);   // 'cognitive' | 'personality' | 'interest'
-  const [domain, setDomain]         = useState(null);    // 'gf' | 'gv' | ...
-  const [templates, setTemplates]   = useState([]);      // existing templates for selected domain
-  const [template, setTemplate]     = useState(null);    // selected template slug
+  const [category, setCategory]     = useState(null);
+  const [domain, setDomain]         = useState(null);
+  const [templates, setTemplates]   = useState([]);
+  const [template, setTemplate]     = useState(null);
   const [newTemplate, setNewTemplate] = useState('');
 
   // File uploads — one per slot
-  const [slotFiles, setSlotFiles]   = useState({});      // { stim: File, optA: File, ... }
-  const [slotStatus, setSlotStatus] = useState({});      // { stim: 'ok'|'err'|'uploading', ... }
+  const [slotFiles, setSlotFiles]   = useState({});
+  const [slotStatus, setSlotStatus] = useState({});
   const [uploading, setUploading]   = useState(false);
 
   // Browse existing
@@ -122,18 +109,14 @@ export default function ShapeLibraryPage() {
   /* ── Derive templates from folder list when domain changes ── */
   useEffect(() => {
     if (!domain) { setTemplates([]); return; }
-    // For Gf: folders like "gf/matrix_2x2/1" → template = "matrix_2x2"
-    // For others: folders like "symbol_matching" → template = "symbol_matching"
     const prefix = `${domain}/`;
     const tpls = new Set();
     folders.forEach(f => {
       if (f.name.startsWith(prefix)) {
-        // gf/matrix_2x2/1 → matrix_2x2
         const rest = f.name.slice(prefix.length);
         const tpl = rest.split('/')[0];
         if (tpl) tpls.add(tpl);
       } else if (!f.name.includes('/')) {
-        // Legacy flat folders — could be templates for any domain
         tpls.add(f.name);
       }
     });
@@ -198,7 +181,7 @@ export default function ShapeLibraryPage() {
       setSlotStatus(prev => ({ ...prev, [slot.key]: 'uploading' }));
       const fd = new FormData();
       fd.append('folder', folderPath);
-      fd.append('shapes', file, file.name);   // keep original filename
+      fd.append('shapes', file, file.name);
 
       try {
         const r = await fetch(`${API}/items/shapes/upload-folder`, {
@@ -217,7 +200,6 @@ export default function ShapeLibraryPage() {
     if (okCount > 0) {
       toast$('ok', `${okCount} file${okCount > 1 ? 's' : ''} uploaded to ${folderPath}/`);
       loadFolders();
-      // Refresh existing files list
       fetch(`${API}/items/shapes/folder/${folderPath}`, { headers: authHdr() })
         .then(r => r.ok ? r.json() : { files: [] })
         .then(d => setExistingFiles(d.files || []))
@@ -246,329 +228,330 @@ export default function ShapeLibraryPage() {
 
   // ─────────────── RENDER ───────────────
 
-  const stepStyle = (active) => ({
-    padding: '14px 18px', borderRadius: 12, border: `1.5px solid ${active ? C.accent : C.border}`,
-    background: active ? '#EEF2FF' : C.surface, cursor: 'pointer', transition: 'all .15s',
-    display: 'flex', alignItems: 'center', gap: 10,
-  });
-
-  const chipStyle = (active) => ({
-    padding: '8px 16px', borderRadius: 10, border: `1.5px solid ${active ? C.accent : C.border}`,
-    background: active ? '#EEF2FF' : C.surface, cursor: 'pointer', transition: 'all .15s',
-    fontSize: 13, fontWeight: active ? 600 : 400, color: active ? C.accent : C.text,
-    display: 'inline-flex', alignItems: 'center', gap: 6,
-  });
-
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-
-      {/* ── Header ── */}
-      <header style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        background: C.surface, borderBottom: `1px solid ${C.border}`,
-        padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', gap: 12,
-      }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 8, background: C.accent, color: '#fff',
-          fontFamily: 'monospace', fontSize: 12, fontWeight: 600,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>SVG</div>
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 600 }}>Item SVG Manager</div>
-          <div style={{ fontSize: 11, color: C.muted }}>Upload question & option images</div>
-        </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-          <button onClick={() => { setBrowseMode(!browseMode); if (!browseMode) loadFolders(); }}
-            style={{
-              padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 500,
-              border: `1px solid ${C.border}`, background: browseMode ? '#EEF2FF' : C.surface,
-              color: browseMode ? C.accent : C.text, cursor: 'pointer',
-            }}>
-            {browseMode ? '← Upload Mode' : '📁 Browse Files'}
+    <div className="min-h-screen bg-stone-50">
+      <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-black text-stone-900">Shape Library</h1>
+            <p className="text-sm text-stone-500 mt-1">Upload and manage question & option images for test items</p>
+          </div>
+          <button
+            onClick={() => { setBrowseMode(!browseMode); if (!browseMode) loadFolders(); }}
+            className="flex items-center gap-2 bg-white border border-stone-200 hover:border-stone-300 text-stone-700 font-bold rounded-xl px-4 py-2.5 text-sm transition-colors"
+          >
+            {browseMode ? <><ArrowLeft size={14} /> Upload Mode</> : <><FolderOpen size={14} /> Browse Files</>}
           </button>
         </div>
-      </header>
 
-      {/* ── Browse Mode ── */}
-      {browseMode ? (
-        <div style={{ display: 'flex', flex: 1 }}>
-          {/* Sidebar */}
-          <nav style={{
-            width: 260, flexShrink: 0, background: C.surface,
-            borderRight: `1px solid ${C.border}`, overflowY: 'auto',
-            minHeight: 'calc(100vh - 56px)',
-          }}>
-            <div style={{ padding: '14px 14px 8px', fontSize: 10, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '.07em' }}>
-              Folders ({folders.length})
-            </div>
-            {folders.map(f => (
-              <div key={f.name}
-                onClick={() => { setActiveFolder(f.name); loadFiles(f.name); }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 14px', cursor: 'pointer',
-                  borderLeft: `3px solid ${activeFolder === f.name ? C.accent : 'transparent'}`,
-                  background: activeFolder === f.name ? '#EEF2FF' : 'transparent',
-                  fontWeight: activeFolder === f.name ? 600 : 400,
-                  fontSize: 12, color: activeFolder === f.name ? C.accent : C.text,
-                }}>
-                <span>📂</span>
-                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
-                <span style={{ fontSize: 10, color: C.muted, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 99, padding: '1px 6px' }}>{f.count}</span>
-              </div>
-            ))}
-          </nav>
-
-          {/* File grid */}
-          <main style={{ flex: 1, padding: '20px 24px' }}>
-            {!activeFolder ? (
-              <div style={{ textAlign: 'center', color: C.muted, padding: 60 }}>
-                <div style={{ fontSize: 48 }}>📁</div>
-                <p style={{ fontSize: 13, marginTop: 10 }}>Select a folder from the sidebar</p>
-              </div>
-            ) : loadingFiles ? (
-              <div style={{ textAlign: 'center', color: C.muted, padding: 60 }}>Loading...</div>
-            ) : files.length === 0 ? (
-              <div style={{ textAlign: 'center', color: C.muted, padding: 60 }}>
-                <div style={{ fontSize: 48 }}>📭</div>
-                <p style={{ fontSize: 13, marginTop: 10 }}>No files in {activeFolder}/</p>
-              </div>
-            ) : (
-              <>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>📂 {activeFolder}/ — {files.length} files</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 10 }}>
-                  {files.map(fname => (
-                    <div key={fname} style={{
-                      background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10,
-                      overflow: 'hidden', position: 'relative',
-                    }}>
-                      <img src={`/custom/${activeFolder}/${fname}`} alt={fname}
-                        style={{ width: '100%', aspectRatio: '1', objectFit: 'contain', padding: 8, display: 'block' }}
-                        onError={e => { e.target.style.display = 'none'; }} />
-                      <div style={{ fontFamily: 'monospace', fontSize: 8, color: C.muted, padding: '3px 6px', borderTop: `1px solid ${C.border}`, background: C.bg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {fname}
-                      </div>
-                      <button onClick={() => deleteFile(fname)} style={{
-                        position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%',
-                        background: 'rgba(220,38,38,.85)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 10,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>✕</button>
-                    </div>
-                  ))}
+        {browseMode ? (
+          /* ── Browse Mode ── */
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-4">
+            {/* Sidebar */}
+            <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-stone-100">
+                <div className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">
+                  Folders ({folders.length})
                 </div>
-              </>
-            )}
-          </main>
-        </div>
-      ) : (
-        /* ── Upload Wizard ── */
-        <div style={{ maxWidth: 700, margin: '0 auto', padding: '32px 24px' }}>
-
-          {/* Breadcrumb */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 24, fontSize: 12, color: C.muted, flexWrap: 'wrap' }}>
-            <span style={{ cursor: 'pointer', color: C.accent, fontWeight: 600 }} onClick={resetWizard}>Upload</span>
-            {category && <><span>›</span><span style={{ cursor: 'pointer', color: domain ? C.accent : C.text, fontWeight: 600 }} onClick={() => { setDomain(null); setTemplate(null); setSlotFiles({}); setSlotStatus({}); }}>{CATEGORIES[category].label}</span></>}
-            {domain && <><span>›</span><span style={{ cursor: 'pointer', color: template ? C.accent : C.text, fontWeight: 600 }} onClick={() => { setTemplate(null); setSlotFiles({}); setSlotStatus({}); }}>{DOMAINS[domain].label}</span></>}
-            {template && <><span>›</span><span style={{ fontWeight: 600 }}>{template}</span></>}
-          </div>
-
-          {/* ── Step 1: Category ── */}
-          {!category && (
-            <div>
-              <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 6 }}>Select Category</h2>
-              <p style={{ fontSize: 13, color: C.muted, marginBottom: 18 }}>What type of test items are you uploading?</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {Object.entries(CATEGORIES).map(([key, cat]) => (
-                  <div key={key} onClick={() => setCategory(key)} style={stepStyle(false)}>
-                    <span style={{ fontSize: 24 }}>{cat.icon}</span>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600 }}>{cat.label}</div>
-                      <div style={{ fontSize: 11, color: C.muted }}>{cat.domains.length} domain{cat.domains.length > 1 ? 's' : ''}</div>
-                    </div>
-                  </div>
+              </div>
+              <div className="max-h-[70vh] overflow-y-auto">
+                {folders.map(f => (
+                  <button
+                    key={f.name}
+                    onClick={() => { setActiveFolder(f.name); loadFiles(f.name); }}
+                    className={`w-full flex items-center gap-2 px-4 py-2.5 text-left text-xs transition-colors border-l-2 ${
+                      activeFolder === f.name
+                        ? 'border-amber-400 bg-amber-50 text-stone-900 font-bold'
+                        : 'border-transparent hover:bg-stone-50 text-stone-700'
+                    }`}
+                  >
+                    <Folder size={14} className="text-stone-400 flex-shrink-0" />
+                    <span className="flex-1 truncate">{f.name}</span>
+                    <span className="text-[10px] text-stone-500 bg-stone-100 border border-stone-200 rounded-full px-1.5">{f.count}</span>
+                  </button>
                 ))}
               </div>
             </div>
-          )}
 
-          {/* ── Step 2: Domain ── */}
-          {category && !domain && (
-            <div>
-              <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 6 }}>Select Domain</h2>
-              <p style={{ fontSize: 13, color: C.muted, marginBottom: 18 }}>Which cognitive domain?</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {CATEGORIES[category].domains.map(d => (
-                  <div key={d} onClick={() => setDomain(d)} style={stepStyle(false)}>
-                    <span style={{ fontSize: 22, width: 36, height: 36, borderRadius: 10, background: `${DOMAINS[d].color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{DOMAINS[d].icon}</span>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600 }}>{DOMAINS[d].label}</div>
-                    </div>
+            {/* File grid */}
+            <div className="bg-white border border-stone-200 rounded-2xl p-5 lg:p-6 min-h-[50vh]">
+              {!activeFolder ? (
+                <div className="text-center py-16">
+                  <div className="w-12 h-12 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center mx-auto mb-3">
+                    <Folder size={20} className="text-stone-400" />
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── Step 3: Template ── */}
-          {domain && !template && (
-            <div>
-              <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 6 }}>Select Template</h2>
-              <p style={{ fontSize: 13, color: C.muted, marginBottom: 18 }}>Choose an existing template or create a new one</p>
-
-              {templates.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
-                  {templates.map(t => (
-                    <div key={t} onClick={() => setTemplate(t)} style={chipStyle(false)}>
-                      📋 {t.replace(/_/g, ' ')}
-                    </div>
-                  ))}
+                  <p className="text-sm text-stone-500">Select a folder from the sidebar</p>
                 </div>
-              )}
-
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input
-                  placeholder="new_template_name"
-                  value={newTemplate}
-                  onChange={e => setNewTemplate(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && newTemplate.trim()) setTemplate(sanitize(newTemplate)); }}
-                  style={{
-                    flex: 1, padding: '9px 12px', borderRadius: 8,
-                    border: `1.5px solid ${C.border}`, fontSize: 13,
-                    fontFamily: 'monospace', background: C.surface, color: C.text,
-                  }}
-                />
-                <button
-                  disabled={!newTemplate.trim()}
-                  onClick={() => setTemplate(sanitize(newTemplate))}
-                  style={{
-                    padding: '9px 16px', borderRadius: 8, border: 'none',
-                    background: C.accent, color: '#fff', fontSize: 12, fontWeight: 600,
-                    cursor: newTemplate.trim() ? 'pointer' : 'not-allowed',
-                    opacity: newTemplate.trim() ? 1 : 0.4,
-                  }}
-                >Create</button>
-              </div>
-            </div>
-          )}
-
-          {/* ── Step 4: Upload SVGs ── */}
-          {folderPath && (
-            <div>
-              <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>Upload SVGs</h2>
-              <p style={{ fontSize: 12, color: C.muted, marginBottom: 18 }}>
-                Target folder: <strong style={{ color: C.accent }}>{folderPath}/</strong>
-              </p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-                {FILE_SLOTS.map(slot => {
-                  const file = slotFiles[slot.key];
-                  const status = slotStatus[slot.key];
-                  const borderColor = status === 'ok' ? C.green : status === 'err' ? C.red : status === 'uploading' ? C.accent : (file ? C.accent : C.border);
-
-                  return (
-                    <label key={slot.key} style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-                      padding: 16, borderRadius: 12,
-                      border: `2px dashed ${borderColor}`,
-                      background: file ? '#EEF2FF' : C.surface,
-                      cursor: 'pointer', transition: 'all .15s', textAlign: 'center',
-                    }}>
-                      <input type="file" accept=".svg,.png" style={{ display: 'none' }}
-                        onChange={e => handleSlotFile(slot.key, e.target.files)} />
-
-                      {/* Preview */}
-                      {file ? (
-                        <div style={{ width: 64, height: 64, borderRadius: 8, background: '#fff', border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                          <img src={URL.createObjectURL(file)} alt="" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-                        </div>
-                      ) : (
-                        <div style={{ width: 64, height: 64, borderRadius: 8, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: C.muted }}>
-                          {slot.key === 'stim' ? '🖼️' : '🔲'}
-                        </div>
-                      )}
-
-                      <div style={{ fontSize: 13, fontWeight: 600, color: status === 'ok' ? C.green : C.text }}>
-                        {status === 'ok' ? '✓ ' : status === 'err' ? '✕ ' : ''}{slot.label}
-                      </div>
-                      <div style={{ fontSize: 10, color: C.muted }}>{file ? file.name : slot.desc}</div>
-
-                      {status === 'uploading' && (
-                        <div style={{ width: '80%', height: 3, background: C.border, borderRadius: 99, overflow: 'hidden' }}>
-                          <div style={{ width: '60%', height: '100%', background: C.accent, borderRadius: 99, animation: 'slpShimmer 1s infinite' }} />
-                        </div>
-                      )}
-                    </label>
-                  );
-                })}
-              </div>
-
-              {/* Upload button */}
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <button
-                  onClick={handleUpload}
-                  disabled={uploading || Object.keys(slotFiles).length === 0}
-                  style={{
-                    padding: '12px 28px', borderRadius: 10, border: 'none',
-                    background: uploading ? C.muted : C.accent, color: '#fff',
-                    fontSize: 14, fontWeight: 700, cursor: uploading ? 'not-allowed' : 'pointer',
-                    opacity: Object.keys(slotFiles).length === 0 ? 0.4 : 1,
-                  }}
-                >
-                  {uploading ? 'Uploading...' : `Upload ${Object.keys(slotFiles).length} file${Object.keys(slotFiles).length !== 1 ? 's' : ''}`}
-                </button>
-                <button onClick={resetWizard} style={{
-                  padding: '10px 18px', borderRadius: 8, border: `1px solid ${C.border}`,
-                  background: C.surface, color: C.text, fontSize: 12, cursor: 'pointer',
-                }}>Start Over</button>
-              </div>
-
-              {/* ── Existing files in this folder ── */}
-              {loadingExisting ? (
-                <div style={{ textAlign: 'center', color: C.muted, padding: 20, fontSize: 12 }}>Loading existing files...</div>
-              ) : existingFiles.length > 0 && (
-                <div style={{ marginTop: 28 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>
-                    Already uploaded — {existingFiles.length} file{existingFiles.length !== 1 ? 's' : ''} in {folderPath}/
+              ) : loadingFiles ? (
+                <div className="text-center py-16">
+                  <div className="w-8 h-8 border-2 border-stone-300 border-t-stone-900 rounded-full animate-spin mx-auto mb-3" />
+                  <div className="text-sm text-stone-500">Loading…</div>
+                </div>
+              ) : files.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-12 h-12 rounded-full bg-stone-50 border border-stone-100 flex items-center justify-center mx-auto mb-3">
+                    <Inbox size={20} className="text-stone-400" />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 8 }}>
-                    {existingFiles.map(fname => (
-                      <div key={fname} style={{
-                        background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8,
-                        overflow: 'hidden', position: 'relative',
-                      }}>
-                        <img src={`/custom/${folderPath}/${fname}`} alt={fname}
-                          style={{ width: '100%', aspectRatio: '1', objectFit: 'contain', padding: 6, display: 'block' }}
-                          onError={e => { e.target.style.display = 'none'; }} />
-                        <div style={{ fontFamily: 'monospace', fontSize: 8, color: C.muted, padding: '2px 5px', borderTop: `1px solid ${C.border}`, background: C.bg, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <p className="text-sm text-stone-500">No files in {activeFolder}/</p>
+                </div>
+              ) : (
+                <>
+                  <div className="text-sm font-bold text-stone-900 mb-4">
+                    {activeFolder}/ <span className="text-stone-500 font-normal">· {files.length} file{files.length !== 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {files.map(fname => (
+                      <div key={fname} className="bg-white border border-stone-200 rounded-xl overflow-hidden relative group">
+                        <img
+                          src={`/custom/${activeFolder}/${fname}`}
+                          alt={fname}
+                          className="w-full aspect-square object-contain p-2 block"
+                          onError={e => { e.target.style.display = 'none'; }}
+                        />
+                        <div className="font-mono text-[9px] text-stone-500 px-2 py-1 border-t border-stone-100 bg-stone-50/60 truncate">
                           {fname}
                         </div>
-                        <button onClick={async () => {
-                          if (!window.confirm(`Delete ${fname}?`)) return;
-                          try {
-                            await fetch(`${API}/items/shapes/folder/${folderPath}/${encodeURIComponent(fname)}`, { method: 'DELETE', headers: authHdr() });
-                            setExistingFiles(prev => prev.filter(f => f !== fname));
-                            toast$('ok', `${fname} deleted`);
-                          } catch { toast$('err', 'Delete failed'); }
-                        }} style={{
-                          position: 'absolute', top: 3, right: 3, width: 18, height: 18, borderRadius: '50%',
-                          background: 'rgba(220,38,38,.8)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 9,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>✕</button>
+                        <button
+                          onClick={() => deleteFile(fname)}
+                          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-rose-500/90 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X size={12} />
+                        </button>
                       </div>
                     ))}
                   </div>
-                </div>
+                </>
               )}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        ) : (
+          /* ── Upload Wizard ── */
+          <div className="max-w-3xl mx-auto">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-2 mb-5 text-xs text-stone-500 flex-wrap">
+              <button className="text-amber-700 font-bold hover:underline" onClick={resetWizard}>Upload</button>
+              {category && <>
+                <ChevronRight size={12} />
+                <button className={`font-bold hover:underline ${domain ? 'text-amber-700' : 'text-stone-900'}`}
+                  onClick={() => { setDomain(null); setTemplate(null); setSlotFiles({}); setSlotStatus({}); }}>
+                  {CATEGORIES[category].label}
+                </button>
+              </>}
+              {domain && <>
+                <ChevronRight size={12} />
+                <button className={`font-bold hover:underline ${template ? 'text-amber-700' : 'text-stone-900'}`}
+                  onClick={() => { setTemplate(null); setSlotFiles({}); setSlotStatus({}); }}>
+                  {DOMAINS[domain].label}
+                </button>
+              </>}
+              {template && <>
+                <ChevronRight size={12} />
+                <span className="font-bold text-stone-900">{template}</span>
+              </>}
+            </div>
 
-      {toast && <Toast key={toast.k} msg={toast.msg} type={toast.type} onDone={() => setToast(null)} />}
+            {/* ── Step 1: Category ── */}
+            {!category && (
+              <div className="bg-white border border-stone-200 rounded-2xl p-5 lg:p-6">
+                <h2 className="text-base font-bold text-stone-900">Select Category</h2>
+                <p className="text-sm text-stone-500 mt-1 mb-5">What type of test items are you uploading?</p>
+                <div className="flex flex-col gap-2">
+                  {Object.entries(CATEGORIES).map(([key, cat]) => (
+                    <button
+                      key={key}
+                      onClick={() => setCategory(key)}
+                      className="flex items-center gap-3 p-4 rounded-xl border border-stone-200 hover:border-stone-900 hover:bg-stone-50 transition-colors text-left"
+                    >
+                      <div className="flex-1">
+                        <div className="text-sm font-bold text-stone-900">{cat.label}</div>
+                        <div className="text-xs text-stone-500 mt-0.5">{cat.description}</div>
+                      </div>
+                      <ChevronRight size={16} className="text-stone-400" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-      <style>{`
-        @keyframes slpShimmer { 0% { opacity: .4; } 50% { opacity: 1; } 100% { opacity: .4; } }
-      `}</style>
+            {/* ── Step 2: Domain ── */}
+            {category && !domain && (
+              <div className="bg-white border border-stone-200 rounded-2xl p-5 lg:p-6">
+                <h2 className="text-base font-bold text-stone-900">Select Domain</h2>
+                <p className="text-sm text-stone-500 mt-1 mb-5">Which domain do these items belong to?</p>
+                <div className="flex flex-col gap-2">
+                  {CATEGORIES[category].domains.map(d => (
+                    <button
+                      key={d}
+                      onClick={() => setDomain(d)}
+                      className="flex items-center gap-3 p-4 rounded-xl border border-stone-200 hover:border-stone-900 hover:bg-stone-50 transition-colors text-left"
+                    >
+                      <div className="flex-1 text-sm font-bold text-stone-900">{DOMAINS[d].label}</div>
+                      <ChevronRight size={16} className="text-stone-400" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Step 3: Template ── */}
+            {domain && !template && (
+              <div className="bg-white border border-stone-200 rounded-2xl p-5 lg:p-6">
+                <h2 className="text-base font-bold text-stone-900">Select Template</h2>
+                <p className="text-sm text-stone-500 mt-1 mb-5">Choose an existing template or create a new one</p>
+
+                {templates.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-5">
+                    {templates.map(t => (
+                      <button
+                        key={t}
+                        onClick={() => setTemplate(t)}
+                        className="px-3 py-2 rounded-lg border border-stone-200 bg-white text-stone-700 hover:border-stone-900 hover:bg-stone-50 text-xs font-bold transition-colors"
+                      >
+                        {t.replace(/_/g, ' ')}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="border-t border-stone-100 pt-4">
+                  <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1.5">New template</label>
+                  <div className="flex gap-2">
+                    <input
+                      placeholder="new_template_name"
+                      value={newTemplate}
+                      onChange={e => setNewTemplate(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && newTemplate.trim()) setTemplate(sanitize(newTemplate)); }}
+                      className="flex-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm font-mono text-stone-800 outline-none focus:border-amber-400 focus:bg-white"
+                    />
+                    <button
+                      disabled={!newTemplate.trim()}
+                      onClick={() => setTemplate(sanitize(newTemplate))}
+                      className="flex items-center gap-1 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-lg px-4 py-2 text-sm transition-colors disabled:opacity-40"
+                    >
+                      <Plus size={14} /> Create
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Step 4: Upload SVGs ── */}
+            {folderPath && (
+              <div className="bg-white border border-stone-200 rounded-2xl p-5 lg:p-6">
+                <h2 className="text-base font-bold text-stone-900">Upload Files</h2>
+                <p className="text-xs text-stone-500 mt-1 mb-5">
+                  Target folder: <code className="px-1.5 py-0.5 bg-stone-100 text-amber-700 rounded font-mono">{folderPath}/</code>
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+                  {FILE_SLOTS.map(slot => {
+                    const file = slotFiles[slot.key];
+                    const status = slotStatus[slot.key];
+                    const border =
+                      status === 'ok' ? 'border-emerald-400 bg-emerald-50' :
+                      status === 'err' ? 'border-rose-400 bg-rose-50' :
+                      status === 'uploading' ? 'border-amber-400 bg-amber-50' :
+                      file ? 'border-amber-400 bg-amber-50' : 'border-stone-200 bg-stone-50/60 hover:border-stone-300';
+
+                    return (
+                      <label key={slot.key} className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-dashed cursor-pointer transition-colors text-center ${border}`}>
+                        <input type="file" accept=".svg,.png" className="hidden"
+                          onChange={e => handleSlotFile(slot.key, e.target.files)} />
+
+                        {/* Preview */}
+                        {file ? (
+                          <div className="w-16 h-16 rounded-lg bg-white border border-stone-200 flex items-center justify-center overflow-hidden">
+                            <img src={URL.createObjectURL(file)} alt="" className="max-w-full max-h-full object-contain" />
+                          </div>
+                        ) : (
+                          <div className="w-16 h-16 rounded-lg bg-white border border-stone-200 flex items-center justify-center">
+                            <FileImage size={22} className="text-stone-400" />
+                          </div>
+                        )}
+
+                        <div className={`text-xs font-bold flex items-center gap-1 ${
+                          status === 'ok' ? 'text-emerald-700' : status === 'err' ? 'text-rose-600' : 'text-stone-900'
+                        }`}>
+                          {status === 'ok' && <CheckCircle2 size={12} />}
+                          {status === 'err' && <XCircle size={12} />}
+                          {slot.label}
+                        </div>
+                        <div className="text-[10px] text-stone-500 line-clamp-1">{file ? file.name : slot.desc}</div>
+
+                        {status === 'uploading' && (
+                          <div className="w-3/4 h-1 bg-stone-200 rounded-full overflow-hidden">
+                            <div className="w-3/5 h-full bg-amber-400 animate-pulse" />
+                          </div>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+
+                {/* Upload button */}
+                <div className="flex flex-wrap gap-2 items-center">
+                  <button
+                    onClick={handleUpload}
+                    disabled={uploading || Object.keys(slotFiles).length === 0}
+                    className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-xl px-5 py-2.5 text-sm transition-colors disabled:opacity-40"
+                  >
+                    <Upload size={14} />
+                    {uploading ? 'Uploading…' : `Upload ${Object.keys(slotFiles).length} file${Object.keys(slotFiles).length !== 1 ? 's' : ''}`}
+                  </button>
+                  <button
+                    onClick={resetWizard}
+                    className="bg-white border border-stone-200 hover:border-stone-300 text-stone-700 font-bold rounded-xl px-4 py-2.5 text-sm transition-colors"
+                  >
+                    Start Over
+                  </button>
+                </div>
+
+                {/* ── Existing files in this folder ── */}
+                {loadingExisting ? (
+                  <div className="text-center text-xs text-stone-500 mt-6">Loading existing files…</div>
+                ) : existingFiles.length > 0 && (
+                  <div className="mt-7 pt-5 border-t border-stone-100">
+                    <div className="text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-3">
+                      Already uploaded — {existingFiles.length} file{existingFiles.length !== 1 ? 's' : ''} in {folderPath}/
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                      {existingFiles.map(fname => (
+                        <div key={fname} className="bg-white border border-stone-200 rounded-lg overflow-hidden relative group">
+                          <img
+                            src={`/custom/${folderPath}/${fname}`}
+                            alt={fname}
+                            className="w-full aspect-square object-contain p-1.5 block"
+                            onError={e => { e.target.style.display = 'none'; }}
+                          />
+                          <div className="font-mono text-[9px] text-stone-500 px-1.5 py-1 border-t border-stone-100 bg-stone-50/60 truncate">
+                            {fname}
+                          </div>
+                          <button
+                            onClick={async () => {
+                              if (!window.confirm(`Delete ${fname}?`)) return;
+                              try {
+                                await fetch(`${API}/items/shapes/folder/${folderPath}/${encodeURIComponent(fname)}`, { method: 'DELETE', headers: authHdr() });
+                                setExistingFiles(prev => prev.filter(f => f !== fname));
+                                toast$('ok', `${fname} deleted`);
+                              } catch { toast$('err', 'Delete failed'); }
+                            }}
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-rose-500/90 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X size={10} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {toast && <Toast key={toast.k} msg={toast.msg} type={toast.type} onDone={() => setToast(null)} />}
+      </div>
     </div>
   );
 }

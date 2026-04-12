@@ -3,29 +3,346 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════
-   COGNIMAP DESIGN SYSTEM
-   Premium • Warm • Enigmatic
+   COGNIMAP — Admin matches Student-side aesthetic
+   Warm paper · sage / blush / gold accents
+   DM Serif Display headings · DM Sans body
    ═══════════════════════════════════════════ */
 
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+
 :root {
-  --bg: #FEFDFB;
-  --bg-subtle: #FDF9F3;
-  --border: #F5E4CC;
-  --border-strong: #EDD5B3;
-  --ink: #1C1917;
-  --ink-soft: #44403C;
-  --ink-dim: #78716C;
-  --ink-faint: #A8A29E;
-  --copper: #B45309;
-  --copper-bright: #F59E0B;
-  --sage: #4D7C5E;
+  /* ── Ink (text colors) ── */
+  --ink:               #1a2332;
+  --ink-soft:          #2d3748;
+  --ink-dim:           #4a5568;
+  --ink-faint:         #8898aa;
+  --ink-mute:          #b8c0cc;
+
+  /* ── Surfaces ── */
+  --paper:             #f5f2ed;       /* page background — warm */
+  --warm:              #fdfaf5;       /* topbar / hover — even warmer */
+  --card:              #ffffff;       /* card surface */
+  --sidebar-bg:        #f7f3ee;       /* sidebar — slightly darker than paper */
+
+  /* ── Color accents (warm earthy palette) ── */
+  --sage:              #5f8f72;
+  --sage-light:        #a8ccb4;
+  --sage-pale:         #e8f3ec;
+  --blush:             #c97d5f;
+  --blush-pale:        #faeae4;
+  --blush-light:       #efc4b4;
+  --gold:              #c9963e;
+  --gold-pale:         #fef3dc;
+  --lavender:          #8b7ec8;
+  --lav-pale:          #eeecf8;
+  --slate:             #4a5568;
+  --slate-light:       #8898aa;
+  --slate-pale:        #f0f2f5;
+
+  /* ── Borders ── */
+  --border:            rgba(26, 35, 50, 0.08);
+  --border-strong:     rgba(26, 35, 50, 0.14);
+
+  /* ── Semantic ── */
+  --success:           #5f8f72;
+  --success-soft:      #e8f3ec;
+  --warning:           #c9963e;
+  --warning-soft:      #fef3dc;
+  --error:             #c97d5f;
+  --error-soft:        #faeae4;
+
+  /* ── Elevation ── */
+  --shadow-xs:         0 1px 2px rgba(26, 35, 50, 0.04);
+  --shadow-sm:         0 2px 8px rgba(26, 35, 50, 0.05);
+  --shadow-md:         0 4px 16px rgba(26, 35, 50, 0.06);
+
+  /* ── Radii ── */
+  --radius-sm:         6px;
+  --radius:            8px;
+  --radius-md:         10px;
+  --radius-lg:         14px;
+  --radius-xl:         16px;
 }
 
-* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 html { scroll-behavior: smooth; }
 
-/* Paper & Ink theme variables (used by TestRunner + StudentDashboard) */
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--paper);
+  min-height: 100vh;
+  letter-spacing: 0;
+}
+
+/* ── Display font for headings ── */
+.font-display {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.2px;
+}
+
+/* ── Refined Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(26, 35, 50, 0.15); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(26, 35, 50, 0.25); }
+
+::selection { background: rgba(201, 125, 95, 0.20); color: var(--ink); }
+
+*:focus-visible {
+  outline: 1.5px solid var(--blush);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+}
+
+/* ═══════════════════════════════════════════
+   COMPONENT LAYER — matches student-side patterns
+   ═══════════════════════════════════════════ */
+@layer components {
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    transition: border-color 0.15s ease;
+  }
+  .card-hover:hover {
+    border-color: var(--border-strong);
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium text-white transition-all duration-150;
+    background: var(--blush);
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-primary:hover {
+    background: #b86e51;
+  }
+  .btn-primary:active { transform: translateY(0.5px); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-[12.5px] font-medium transition-all duration-150;
+    background: transparent;
+    color: var(--slate);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-secondary:hover {
+    background: var(--slate-pale);
+    color: var(--ink);
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[12px] font-medium transition-colors duration-150;
+    color: var(--slate);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: none;
+  }
+  .btn-ghost:hover {
+    background: var(--slate-pale);
+    color: var(--ink);
+  }
+
+  /* ── Inputs ── */
+  .input-field {
+    @apply w-full px-3 py-2 text-[13px] font-normal transition-all duration-150;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+  }
+  .input-field:focus {
+    border-color: var(--blush);
+    box-shadow: 0 0 0 3px rgba(201, 125, 95, 0.10);
+    outline: none;
+  }
+  .input-field::placeholder { color: var(--ink-faint); font-weight: 400; }
+
+  /* ── Eyebrow / overline ── */
+  .label-overline {
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--slate-light);
+  }
+
+  /* ── Page wrapper ── */
+  .page {
+    @apply min-h-screen;
+    background: var(--paper);
+  }
+  .page-container {
+    @apply max-w-[1280px] mx-auto;
+    padding: 24px 32px;
+  }
+
+  /* ── Page title (DM Serif Display, compact) ── */
+  .page-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1.15;
+    letter-spacing: -0.3px;
+  }
+  .page-title em {
+    font-style: italic;
+    color: var(--blush);
+  }
+  .page-subtitle {
+    font-size: 12.5px;
+    color: var(--slate-light);
+    margin-top: 4px;
+  }
+
+  /* ── Stat tile ── */
+  .stat-tile {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    transition: border-color 0.15s ease;
+  }
+  .stat-tile:hover {
+    border-color: var(--border-strong);
+  }
+  .stat-tile-label {
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--slate-light);
+  }
+  .stat-tile-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 30px;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1;
+    letter-spacing: -0.5px;
+    margin-top: 8px;
+  }
+  .stat-tile-sub {
+    font-size: 11.5px;
+    color: var(--slate-light);
+    margin-top: 6px;
+  }
+
+  /* ── Chip ── */
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium;
+    background: var(--slate-pale);
+    color: var(--slate);
+    border-radius: 20px;
+  }
+
+  /* ── Status badges ── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 text-[10.5px] font-medium;
+    border-radius: 20px;
+  }
+  .badge-sage  { background: var(--sage-pale);  color: var(--sage); }
+  .badge-blush { background: var(--blush-pale); color: var(--blush); }
+  .badge-gold  { background: var(--gold-pale);  color: var(--gold); }
+  .badge-slate { background: var(--slate-pale); color: var(--slate); }
+
+  /* ── Divider ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Section title (inside cards) ── */
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--ink);
+    letter-spacing: -0.2px;
+  }
+  .section-desc {
+    font-size: 12px;
+    color: var(--slate-light);
+    margin-top: 2px;
+  }
+
+  /* ── Table ── */
+  .table-pro {
+    @apply w-full text-sm;
+    border-collapse: collapse;
+  }
+  .table-pro thead tr {
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-pro thead th {
+    @apply px-4 py-2.5 text-left;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--slate-light);
+  }
+  .table-pro tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s ease;
+  }
+  .table-pro tbody tr:hover { background: var(--warm); }
+  .table-pro tbody tr:last-child { border-bottom: none; }
+  .table-pro tbody td {
+    @apply px-4 py-3;
+    font-size: 13px;
+    color: var(--ink);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-up { animation: fadeUp 0.4s ease both; }
+.animate-fade-in { animation: fadeIn 0.3s ease both; }
+.stagger > * { animation: fadeUp 0.35s ease both; }
+.stagger > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger > *:nth-child(2) { animation-delay: 0.10s; }
+.stagger > *:nth-child(3) { animation-delay: 0.16s; }
+.stagger > *:nth-child(4) { animation-delay: 0.22s; }
+.stagger > *:nth-child(5) { animation-delay: 0.28s; }
+.stagger > *:nth-child(6) { animation-delay: 0.34s; }
+.stagger > *:nth-child(7) { animation-delay: 0.40s; }
+.stagger > *:nth-child(8) { animation-delay: 0.46s; }
+
+/* ═══════════════════════════════════════════
+   STUDENT-SIDE LEGACY (paper theme)
+   ═══════════════════════════════════════════ */
 :root {
   --color-background-primary:   #FBF6EE;
   --color-background-secondary: #F5EFE3;
@@ -38,126 +355,7 @@ html { scroll-behavior: smooth; }
   --border-radius-md:           6px;
   --border-radius-lg:           10px;
   --border-radius-xl:           14px;
-}
 
-body {
-  font-family: 'Source Sans 3', system-ui, sans-serif;
-  color: var(--ink);
-  background: #FBF6EE;
-  min-height: 100vh;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
-
-/* Selection color */
-::selection { background: rgba(180, 83, 9, 0.15); color: var(--ink); }
-
-/* Focus ring */
-*:focus-visible {
-  outline: 2px solid var(--copper);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-/* Print styles */
-@media print {
-  .no-print { display: none !important; }
-  body { background: white; }
-}
-
-/* Utility layers */
-@layer components {
-  .text-display {
-    font-family: 'Playfair Display', Georgia, serif;
-  }
-  
-  .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl
-           font-semibold text-sm text-white transition-all duration-200;
-    background: linear-gradient(135deg, #B45309, #D97706);
-    box-shadow: 0 4px 16px rgba(180, 83, 9, 0.2);
-  }
-  .btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(180, 83, 9, 0.3);
-  }
-  .btn-primary:active {
-    transform: translateY(0);
-  }
-  
-  .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl
-           font-semibold text-sm transition-all duration-200 border;
-    border-color: var(--border-strong);
-    color: var(--ink-soft);
-    background: var(--bg);
-  }
-  .btn-secondary:hover {
-    border-color: var(--copper);
-    color: var(--copper);
-    background: rgba(180, 83, 9, 0.03);
-  }
-  
-  .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg
-           font-medium text-sm transition-all duration-200;
-    color: var(--ink-dim);
-  }
-  .btn-ghost:hover {
-    background: rgba(0,0,0,0.04);
-    color: var(--ink);
-  }
-
-  .card {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    box-shadow: 0 1px 3px rgba(28, 25, 23, 0.04);
-    transition: all 0.2s ease;
-  }
-  .card:hover {
-    box-shadow: 0 4px 16px rgba(28, 25, 23, 0.06);
-  }
-
-  .input-field {
-    @apply w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200;
-    background: var(--bg-subtle);
-    border: 1.5px solid var(--border);
-    color: var(--ink);
-  }
-  .input-field:focus {
-    border-color: var(--copper);
-    background: white;
-    box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.08);
-    outline: none;
-  }
-  .input-field::placeholder {
-    color: var(--ink-faint);
-  }
-
-  .badge {
-    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold;
-  }
-
-  /* Domain accent colors */
-  .accent-gf { --accent: #6366F1; }
-  .accent-gv { --accent: #0891B2; }
-  .accent-gq { --accent: #D97706; }
-  .accent-gc { --accent: #059669; }
-  .accent-gs { --accent: #DC2626; }
-}
-
-/* Subtle background texture */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  background: 
-    radial-gradient(ellipse at 20% 0%, rgba(180, 83, 9, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 100%, rgba(77, 124, 94, 0.03) 0%, transparent 50%);
+  --copper: #C97D5F;
+  --bg-subtle: #F5F2ED;
 }
