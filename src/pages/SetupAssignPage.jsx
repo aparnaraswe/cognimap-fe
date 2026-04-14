@@ -18,12 +18,12 @@ import {
 
 const DOMAIN_LABELS = {
   gf: 'Fluid Reasoning', gv: 'Visual Spatial', gq: 'Quantitative',
-  gc: 'Verbal Reasoning', gs: 'Processing Speed',
+  gc: 'Verbal Reasoning', gs: 'Processing Speed', gwm: 'Working Memory',
   personality: 'Personality', interest: 'Career Interest',
 };
 
 const TEST_TYPES = [
-  { key: 'cognitive',   label: 'Cognitive Aptitude',       description: 'Adaptive IRT-based assessment across 5 cognitive domains', Icon: Brain },
+  { key: 'cognitive',   label: 'Cognitive Aptitude',       description: 'Adaptive IRT-based assessment across 6 cognitive domains', Icon: Brain },
   { key: 'personality', label: 'Personality (Big Five)',   description: 'Likert-scale personality trait assessment',               Icon: Heart },
   { key: 'interest',    label: 'Career Interest (RIASEC)', description: 'Holland-type career interest inventory',                  Icon: Compass },
 ];

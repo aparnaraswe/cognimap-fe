@@ -838,7 +838,7 @@ function MemoryRevealDisplay({ item, onRevealComplete }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // OPTION BUTTON — clean white theme (supports text AND visual)
 // ═══════════════════════════════════════════════════════════════════════════════
-function OptionBtn({ opt, letter, onClick, state, disabled, isVisual }) {
+function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVisual }) {
   // Strip obj: prefix — it's an internal GWM qualifier, never shown to the user
   const val = String(opt.value || '').replace(/^obj:/, '');
   const isImg = val.startsWith('img_');
@@ -880,6 +880,7 @@ function OptionBtn({ opt, letter, onClick, state, disabled, isVisual }) {
       <button
         disabled={disabled}
         onClick={onClick}
+        onDoubleClick={onDoubleClick}
         className={`${faded ? 'opacity-15 pointer-events-none' : ''}`}
         style={{
           border: `2.5px solid ${border}`,
@@ -920,6 +921,7 @@ function OptionBtn({ opt, letter, onClick, state, disabled, isVisual }) {
     <button
       disabled={disabled}
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
       className={`rounded-2xl flex items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 ${faded ? 'opacity-20 pointer-events-none' : ''}`}
       style={{
         border: `2px solid ${border}`,
@@ -1542,9 +1544,255 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button className="cg-btn-primary" onClick={() => setStep('practice')}>Try Practice Questions</button>
+              <button className="cg-btn-primary" onClick={() => setStep('onboarding')}>Try Practice Questions</button>
               <button className="cg-btn-secondary" onClick={() => setStep('gateway')}>Back</button>
             </div>
+          </div>
+        </div>
+      </Shell>
+    );
+  }
+
+  // ══ S3.5 ONBOARDING — spotlight tour of the test screen ══
+  if (step === 'onboarding') {
+    return (
+      <OnboardingTour
+        variant={domain === 'gwm' ? 'gwm' : 'standard'}
+        onDone={() => setStep('practice')}
+      />
+    );
+  }
+  if (false) {
+    const OC = color;
+    const OCB = bg;
+    const OCD = dark;
+    const Callout = ({ n, title, desc, color = OC }) => (
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+        <div style={{
+          flexShrink: 0, width: 26, height: 26, borderRadius: '50%',
+          background: color, color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 13, fontWeight: 800, boxShadow: `0 2px 8px ${color}66`,
+        }}>{n}</div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#1A1A2E', marginBottom: 2 }}>{title}</div>
+          <div style={{ fontSize: 12, color: '#555566', lineHeight: 1.5 }}>{desc}</div>
+        </div>
+      </div>
+    );
+    return (
+      <Shell>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 24px 32px' }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: 18 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: OCB, color: OCD, border: `1px solid ${OC}33`,
+              padding: '4px 12px', borderRadius: 100,
+              fontSize: 10, fontWeight: 800, letterSpacing: '1.4px', textTransform: 'uppercase',
+              marginBottom: 10,
+            }}>
+              <span>✨</span> How the test screen works
+            </div>
+            <h1 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: 26, color: '#1A1A2E', margin: 0 }}>
+              Let's get you familiar with the layout
+            </h1>
+            <p style={{ fontSize: 13, color: '#78788C', marginTop: 6 }}>
+              Every question uses this same screen. Take a quick look before we start.
+            </p>
+          </div>
+
+          {/* Mockup + numbered annotations */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 20, alignItems: 'stretch' }}>
+
+            {/* LEFT: visual mockup of test screen */}
+            <div style={{
+              background: '#FFFFFF', borderRadius: 16,
+              border: `1px solid ${OC}22`,
+              boxShadow: `0 8px 24px ${OC}14`, overflow: 'hidden',
+              display: 'flex', flexDirection: 'column',
+            }}>
+              {/* Top bar with timer */}
+              <div style={{
+                padding: '10px 14px', borderBottom: `1px solid ${OC}18`,
+                display: 'flex', alignItems: 'center', gap: 10, background: '#FAFAFE',
+                position: 'relative',
+              }}>
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  background: OCB, color: OCD, padding: '3px 10px', borderRadius: 20,
+                  fontSize: 10, fontWeight: 800, border: `1px solid ${OC}33`,
+                }}>{meta.icon} {meta.label}</div>
+                <div style={{ flex: 1 }} />
+                <div style={{
+                  position: 'relative',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: '#fff', border: `2px solid ${OC}`, color: OCD,
+                  padding: '4px 12px', borderRadius: 20,
+                  fontSize: 11, fontWeight: 800,
+                  boxShadow: `0 0 0 4px ${OC}22`,
+                }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  00:45
+                  {/* annotation #4 */}
+                  <span style={{
+                    position: 'absolute', top: -10, right: -10,
+                    width: 22, height: 22, borderRadius: '50%',
+                    background: '#F59E0B', color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 800, boxShadow: '0 2px 6px rgba(245,158,11,0.5)',
+                  }}>4</span>
+                </div>
+              </div>
+
+              {/* Body grid: left question+image | right options */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', flex: 1, minHeight: 240 }}>
+                {/* Left side: question + image */}
+                <div style={{ padding: 14, background: '#F7F5FC', borderRight: `1px solid ${OC}18`, position: 'relative' }}>
+                  {/* annotation #1 */}
+                  <span style={{
+                    position: 'absolute', top: 8, left: 8,
+                    width: 22, height: 22, borderRadius: '50%',
+                    background: OC, color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 800, boxShadow: `0 2px 6px ${OC}66`, zIndex: 2,
+                  }}>1</span>
+
+                  {/* Question label + box */}
+                  <div style={{ marginLeft: 26, marginBottom: 10 }}>
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      background: OC, color: '#fff',
+                      padding: '2px 8px', borderRadius: 5,
+                      fontSize: 9, fontWeight: 800, letterSpacing: '0.8px',
+                      marginBottom: 5,
+                    }}>QUESTION</div>
+                    <div style={{
+                      padding: '8px 10px', background: '#fff',
+                      border: `1.5px solid ${OC}33`, borderLeft: `4px solid ${OC}`,
+                      borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#1A1A2E',
+                    }}>
+                      What comes next in the pattern?
+                    </div>
+                  </div>
+
+                  {/* Image/stimulus zone */}
+                  <div style={{ position: 'relative', marginLeft: 26 }}>
+                    <span style={{
+                      position: 'absolute', top: -8, left: -8,
+                      width: 22, height: 22, borderRadius: '50%',
+                      background: '#10B981', color: '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 11, fontWeight: 800, boxShadow: '0 2px 6px rgba(16,185,129,0.5)', zIndex: 2,
+                    }}>2</span>
+                    <div style={{
+                      background: '#fff', border: `1.5px solid ${OC}22`, borderRadius: 10,
+                      padding: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      gap: 6, minHeight: 80,
+                    }}>
+                      {['●','●●','●●●','?'].map((s,i) => (
+                        <div key={i} style={{
+                          width: 36, height: 36, borderRadius: 8,
+                          background: s === '?' ? OCB : '#fff',
+                          border: s === '?' ? `2px dashed ${OC}` : `1px solid ${OC}22`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 14, fontWeight: 800, color: s === '?' ? OC : '#1A1A2E',
+                        }}>{s}</div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right side: options */}
+                <div style={{ padding: 14, position: 'relative' }}>
+                  <span style={{
+                    position: 'absolute', top: 8, right: 8,
+                    width: 22, height: 22, borderRadius: '50%',
+                    background: '#6366F1', color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 800, boxShadow: '0 2px 6px rgba(99,102,241,0.5)', zIndex: 2,
+                  }}>3</span>
+                  <div style={{ fontSize: 9, fontWeight: 800, color: '#78788C', letterSpacing: '1.2px', marginBottom: 8 }}>
+                    CHOOSE ONE ANSWER
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {['A','B','C','D'].map((k,i) => (
+                      <div key={k} style={{
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        padding: '6px 10px',
+                        background: i === 1 ? OCB : '#fff',
+                        border: i === 1 ? `2px solid ${OC}` : `1px solid ${OC}22`,
+                        borderRadius: 8,
+                      }}>
+                        <span style={{
+                          width: 20, height: 20, borderRadius: 6,
+                          background: i === 1 ? OC : OCB, color: i === 1 ? '#fff' : OCD,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 10, fontWeight: 800,
+                        }}>{k}</span>
+                        <span style={{ fontSize: 11, color: '#1A1A2E' }}>Option {k}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom bar with submit */}
+              <div style={{
+                padding: '10px 14px', borderTop: `1px solid ${OC}18`,
+                display: 'flex', alignItems: 'center', gap: 10, background: '#FAFAFE', position: 'relative',
+              }}>
+                <div style={{ fontSize: 11, color: '#78788C', fontWeight: 600 }}>Question 1 of 10</div>
+                <div style={{ flex: 1 }} />
+                <div style={{ position: 'relative' }}>
+                  <button style={{
+                    background: `linear-gradient(135deg, ${OC}, ${OCD})`, color: '#fff',
+                    border: 'none', padding: '7px 18px', borderRadius: 8,
+                    fontSize: 12, fontWeight: 800, letterSpacing: '0.4px',
+                    boxShadow: `0 4px 12px ${OC}55`, cursor: 'default',
+                  }}>Submit →</button>
+                  <span style={{
+                    position: 'absolute', top: -10, right: -10,
+                    width: 22, height: 22, borderRadius: '50%',
+                    background: '#EF4444', color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 800, boxShadow: '0 2px 6px rgba(239,68,68,0.5)',
+                  }}>5</span>
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT: numbered callouts */}
+            <div style={{
+              background: '#fff', borderRadius: 16, border: `1px solid ${OC}22`,
+              padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 14,
+              boxShadow: `0 4px 14px ${OC}10`,
+            }}>
+              <Callout n="1" color={OC} title="The Question"
+                desc="On the LEFT. Read this carefully first — it tells you what to do." />
+              <Callout n="2" color="#10B981" title="The Picture or Pattern"
+                desc="Just below the question. Look at it to find the clue that helps you answer." />
+              <Callout n="3" color="#6366F1" title="The Options"
+                desc="On the RIGHT. Pick the one answer you think is correct by tapping it." />
+              <Callout n="4" color="#F59E0B" title="The Timer"
+                desc="At the top. It shows how much time you have left for this question." />
+              <Callout n="5" color="#EF4444" title="The Submit Button"
+                desc="At the bottom. Tap it to lock in your answer and move to the next question." />
+
+              <div style={{
+                marginTop: 4, padding: '10px 12px', background: OCB, borderRadius: 10,
+                fontSize: 11, color: OCD, fontWeight: 600, lineHeight: 1.5,
+                border: `1px dashed ${OC}44`,
+              }}>
+                💡 Tip: There's no punishment for thinking. Read the question, look at the picture, then pick your answer.
+              </div>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 22 }}>
+            <button className="cg-btn-secondary" onClick={() => setStep('instructions')}>Back</button>
+            <button className="cg-btn-primary" onClick={() => setStep('practice')}>Got it — Start Practice →</button>
           </div>
         </div>
       </Shell>
@@ -1806,10 +2054,31 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                   </div>
                 </div>
 
-                {/* Prompt */}
-                <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", color: '#1A1A2E',
-                  fontSize: 'clamp(13px,1.4vw,17px)', flexShrink: 0, marginBottom: 8, lineHeight: 1.45 }}>
-                  {pracQ}
+                {/* Prompt — clear "QUESTION" label + readable prompt text */}
+                <div style={{ flexShrink: 0, marginBottom: 10 }}>
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: color, color: '#fff',
+                    padding: '3px 10px 3px 8px', borderRadius: 6,
+                    fontSize: 10, fontWeight: 800, letterSpacing: '1px',
+                    marginBottom: 6,
+                  }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    QUESTION
+                  </div>
+                  <div style={{
+                    padding: '10px 14px',
+                    background: '#fff',
+                    border: `1.5px solid ${color}33`,
+                    borderLeft: `4px solid ${color}`,
+                    borderRadius: 10,
+                    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+                    color: '#1A1A2E',
+                    fontSize: 'clamp(15px, 1.55vw, 18px)',
+                    fontWeight: 600, lineHeight: 1.45,
+                  }}>
+                    {pracQ}
+                  </div>
                 </div>
                 {pracSub && (
                   <p style={{ fontSize: 12, color: '#9999AA', lineHeight: 1.5, marginBottom: 8, flexShrink: 0 }}>{pracSub}</p>
@@ -2296,6 +2565,383 @@ function WelcomeScreen({ testType, batteryInfo, onStart }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// ONBOARDING TOUR — spotlight walkthrough of the test screen
+// ═══════════════════════════════════════════════════════════════════════════════
+const TOUR_STEPS = [
+  { zone: 'zone-question', color: '#7c6fcd', emoji: '1️⃣', title: 'The Question',
+    body: "Read this first — always! It tells you exactly what to find or solve. It's highlighted in purple so you never miss it.",
+    pad: 8, tip: { side: 'right' } },
+  { zone: 'zone-pattern',  color: '#06b6d4', emoji: '2️⃣', title: 'The Picture or Pattern',
+    body: 'This is your clue! Look at how the shapes, sizes or colours change. The dashed box with ? is what you need to fill in.',
+    pad: 8, tip: { side: 'right' } },
+  { zone: 'zone-options',  color: '#10b981', emoji: '3️⃣', title: 'The Answer Options',
+    body: 'Pick the answer you think is correct by clicking it once. It will highlight in purple to show your choice.',
+    pad: 8, tip: { side: 'left' } },
+  { zone: 'zone-timer',    color: '#f59e0b', emoji: '4️⃣', title: 'The Timer',
+    body: 'Shows how much time you have left for this question. It turns yellow then red as time runs out — stay focused!',
+    pad: 6, tip: { side: 'bottom-left' } },
+  { zone: 'zone-options',  color: '#ef4444', emoji: '5️⃣', title: 'Double-click to Submit',
+    body: "No submit button! Just double-click your chosen option to lock in your answer and jump to the next question.",
+    pad: 8, tip: { side: 'left' } },
+];
+
+// ── GWM (working memory) tour — show → hide → options flow ──
+const TOUR_STEPS_GWM = [
+  { zone: 'zone-gwm-timer',    color: '#f59e0b', emoji: '1️⃣', title: 'Memory Timer',
+    body: 'First, a short timer starts. While it runs, look carefully at what appears on screen — you need to remember it!',
+    pad: 6, tip: { side: 'bottom-left' } },
+  { zone: 'zone-gwm-stimulus', color: '#06b6d4', emoji: '2️⃣', title: 'Memorise This',
+    body: 'Numbers, letters or pictures will appear here. Focus — they will disappear when the timer runs out.',
+    pad: 8, tip: { side: 'right' } },
+  { zone: 'zone-gwm-stimulus', color: '#7c6fcd', emoji: '3️⃣', title: 'It Disappears',
+    body: 'Once time is up, what you saw will vanish. Now the question and the answer options will appear.',
+    pad: 8, tip: { side: 'right' } },
+  { zone: 'zone-gwm-options',  color: '#10b981', emoji: '4️⃣', title: 'Answer from Memory',
+    body: 'Pick the option that matches what you remember. Click once to choose, double-click to submit instantly.',
+    pad: 8, tip: { side: 'left' } },
+];
+
+function OnboardingTour({ onDone, variant = 'standard' }) {
+  const isGwm = variant === 'gwm';
+  const STEPS = isGwm ? TOUR_STEPS_GWM : TOUR_STEPS;
+  const [phase, setPhase] = useState('start'); // 'start' | 'tour' | 'done'
+  const [stepIdx, setStepIdx] = useState(0);
+  const [ring, setRing] = useState(null);
+  const [tipPos, setTipPos] = useState({ left: 0, top: 0, opacity: 0 });
+  const [gwmStage, setGwmStage] = useState('show'); // 'show' | 'hidden'
+
+  // When GWM tour advances to step 3 (index 2), flip stimulus → hidden so kids see the transition
+  useEffect(() => {
+    if (!isGwm) return;
+    if (stepIdx >= 2) setGwmStage('hidden'); else setGwmStage('show');
+  }, [isGwm, stepIdx]);
+
+  const positionFor = useCallback((i) => {
+    const s = STEPS[i];
+    const zone = document.getElementById(s.zone);
+    if (!zone) return;
+    const r = zone.getBoundingClientRect();
+    const pad = s.pad;
+    setRing({
+      left: r.left - pad, top: r.top - pad,
+      width: r.width + pad*2, height: r.height + pad*2,
+      color: s.color,
+    });
+    const tw = 320, th = 260, vw = window.innerWidth, vh = window.innerHeight;
+    let left = 0, top = 0;
+    const side = s.tip.side;
+    if (side === 'right')       { left = r.right + 18; top = r.top; if (left + tw > vw - 10) left = r.left - tw - 18; }
+    else if (side === 'left')   { left = r.left - tw - 18; top = r.top; if (left < 10) left = r.right + 18; }
+    else if (side === 'bottom-left') { left = r.right - tw; top = r.bottom + 14; }
+    else if (side === 'top-left')    { left = r.right - tw; top = r.top - th - 14; if (top < 10) top = r.bottom + 14; }
+    left = Math.max(10, Math.min(left, vw - tw - 10));
+    top  = Math.max(10, Math.min(top,  vh - th - 10));
+    setTipPos({ left, top, opacity: 1 });
+  }, []);
+
+  useEffect(() => {
+    if (phase !== 'tour') return;
+    setTipPos(p => ({ ...p, opacity: 0 }));
+    const t = setTimeout(() => positionFor(stepIdx), 50);
+    const onResize = () => positionFor(stepIdx);
+    window.addEventListener('resize', onResize);
+    return () => { clearTimeout(t); window.removeEventListener('resize', onResize); };
+  }, [phase, stepIdx, positionFor]);
+
+  const next = () => {
+    if (stepIdx >= STEPS.length - 1) { setPhase('done'); return; }
+    setStepIdx(stepIdx + 1);
+  };
+  const skip = () => setPhase('done');
+
+  const s = STEPS[stepIdx];
+  const isLast = stepIdx === STEPS.length - 1;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 2000, fontFamily: "'Inter', sans-serif", background: '#f4f2fb', overflow: 'hidden' }}>
+
+      {/* START SCREEN */}
+      {phase === 'start' && (
+        <div style={{ position: 'fixed', inset: 0, background: '#f4f2fb', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 24, padding: '48px 44px', maxWidth: 480, width: '90%', textAlign: 'center', boxShadow: '0 16px 60px rgba(124,111,205,0.2)' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>{isGwm ? '🧠' : '✨'}</div>
+            <h1 style={{ fontSize: 28, fontWeight: 900, color: '#1a1340', marginBottom: 10 }}>
+              {isGwm ? 'This is a memory test' : "Let's get you familiar with the layout"}
+            </h1>
+            <p style={{ fontSize: 15, color: '#6b7280', lineHeight: 1.7, marginBottom: 28 }}>
+              {isGwm
+                ? 'Something will appear for a few seconds — remember it! Then it disappears and you answer from memory.'
+                : 'Every question uses this same screen. Take a quick guided tour before we start — it only takes 30 seconds!'}
+            </p>
+            <button onClick={() => setPhase('tour')} style={{ width: '100%', padding: 15, borderRadius: 14, border: 'none', background: 'linear-gradient(135deg,#7c6fcd,#4c3d9e)', color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer' }}>
+              Show me how it works →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MOCK TEST SCREEN (behind the tour) */}
+      {!isGwm && (
+      <div style={{
+        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+        width: 860, maxWidth: '95vw', background: '#fff', borderRadius: 20,
+        boxShadow: '0 8px 40px rgba(0,0,0,0.12)', overflow: 'hidden',
+      }}>
+        {/* top bar */}
+        <div id="zone-topbar" style={{ background: '#fff', borderBottom: '1.5px solid #ede9fe', padding: '10px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ background: '#ede9fe', color: '#6d28d9', fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span>✳</span> Pattern Reasoning
+          </div>
+          <div id="zone-timer" style={{ background: '#fff7ed', color: '#c2410c', border: '1.5px solid #fed7aa', borderRadius: 20, padding: '5px 14px', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+            ⏱ 00:45
+          </div>
+        </div>
+
+        {/* body */}
+        <div style={{ display: 'flex', minHeight: 360 }}>
+          {/* left */}
+          <div style={{ flex: 1, padding: '20px 22px', borderRight: '1.5px solid #ede9fe', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div id="zone-question" style={{ background: 'linear-gradient(135deg,#7C6FCD,#9B8EE0 55%,#B8ACEE)', borderRadius: 14, padding: '18px 20px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', right: -20, top: -20, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: 'rgba(255,255,255,0.55)', marginBottom: 8, textTransform: 'uppercase' }}>Question 1</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', lineHeight: 1.4 }}>What comes next in the pattern?</div>
+            </div>
+            <div id="zone-pattern" style={{ background: '#f9f8fe', border: '1.5px solid #ede9fe', borderRadius: 12, padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flex: 1 }}>
+              {[7, 10, 13].map((rx, i) => (
+                <div key={i} style={{ width: 56, height: 56, borderRadius: 10, background: '#fff', border: '1.5px solid #e8e4f8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="32" height="32" viewBox="0 0 32 32">
+                    <defs>
+                      <radialGradient id={`gcx${i}`} cx="35%" cy="30%" r="65%">
+                        <stop offset="0%" stopColor="#60c8f5" /><stop offset="100%" stopColor="#2563eb" />
+                      </radialGradient>
+                    </defs>
+                    <circle cx="16" cy="16" r={rx} fill={`url(#gcx${i})`} />
+                  </svg>
+                </div>
+              ))}
+              <div style={{ width: 56, height: 56, borderRadius: 10, border: '2px dashed #b8acee', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: '#c4b5fd' }}>?</div>
+            </div>
+          </div>
+
+          {/* right */}
+          <div id="zone-options" style={{ flex: 1, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: '#a78bfa', textAlign: 'center', marginBottom: 4, textTransform: 'uppercase' }}>Choose One Answer</div>
+            {[
+              { k: 'A', sel: false, label: 'Large circle' },
+              { k: 'B', sel: true,  label: 'Triangle' },
+              { k: 'C', sel: false, label: 'Square' },
+            ].map(opt => (
+              <div key={opt.k} style={{
+                display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                borderRadius: 12,
+                border: opt.sel ? '1.5px solid #7c6fcd' : '1.5px solid #e8e4f8',
+                background: opt.sel ? 'rgba(124,111,205,0.07)' : '#fff',
+              }}>
+                <div style={{
+                  width: 26, height: 26, borderRadius: 7,
+                  background: opt.sel ? '#7c6fcd' : '#ede9fe',
+                  color: opt.sel ? '#fff' : '#7c6fcd',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 800,
+                }}>{opt.k}</div>
+                <span style={{ fontSize: 13, fontWeight: 500, color: '#444' }}>{opt.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* footer — no submit button; double-click option submits */}
+        <div style={{ background: '#fff', borderTop: '1.5px solid #ede9fe', padding: '12px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 13, color: '#9ca3af', fontWeight: 500 }}>Question 1 of 10</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#a78bfa', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span>💡</span> Double-click your answer to submit
+          </span>
+        </div>
+      </div>
+      )}
+
+      {/* GWM MOCK TEST SCREEN */}
+      {isGwm && (
+      <div style={{
+        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+        width: 720, maxWidth: '95vw', background: '#fff', borderRadius: 20,
+        boxShadow: '0 8px 40px rgba(0,0,0,0.12)', overflow: 'hidden',
+      }}>
+        {/* top bar with memory timer */}
+        <div style={{ background: '#fff', borderBottom: '1.5px solid #ede9fe', padding: '10px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ background: '#ede9fe', color: '#6d28d9', fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span>🧠</span> Working Memory
+          </div>
+          <div id="zone-gwm-timer" style={{
+            background: gwmStage === 'show' ? '#fef3c7' : '#fff7ed',
+            color: '#c2410c', border: '1.5px solid #fed7aa', borderRadius: 20,
+            padding: '5px 14px', fontSize: 13, fontWeight: 800,
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            ⏱ {gwmStage === 'show' ? 'Memorise · 00:05' : 'Time up!'}
+          </div>
+        </div>
+
+        {/* body */}
+        <div style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 14, minHeight: 340 }}>
+
+          {/* Stimulus zone — visible only during 'show' */}
+          <div id="zone-gwm-stimulus" style={{
+            background: gwmStage === 'show' ? '#f9f8fe' : '#f3f2f8',
+            border: '1.5px dashed ' + (gwmStage === 'show' ? '#a78bfa' : '#d4d0e4'),
+            borderRadius: 14, padding: 20, minHeight: 110,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
+            transition: 'all .4s',
+          }}>
+            {gwmStage === 'show' ? (
+              ['7', '2', '9', '4'].map((n, i) => (
+                <div key={i} style={{
+                  width: 58, height: 58, borderRadius: 12, background: '#fff',
+                  border: '1.5px solid #ddd6fe', boxShadow: '0 4px 12px rgba(124,111,205,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 26, fontWeight: 800, color: '#4c3d9e',
+                }}>{n}</div>
+              ))
+            ) : (
+              <div style={{ textAlign: 'center', color: '#9ca3af' }}>
+                <div style={{ fontSize: 32 }}>👁️‍🗨️</div>
+                <div style={{ fontSize: 12, fontWeight: 700, marginTop: 4 }}>Hidden — answer from memory</div>
+              </div>
+            )}
+          </div>
+
+          {/* Hidden-state callout target */}
+          <div id="zone-gwm-hidden" style={{
+            height: gwmStage === 'hidden' ? 0 : 0, // invisible anchor, re-uses stimulus rect through the ring via id
+            pointerEvents: 'none',
+          }} />
+
+          {/* Question — shown always, but greyed during 'show' */}
+          <div style={{
+            background: gwmStage === 'show' ? '#f3f2f8' : 'linear-gradient(135deg,#7C6FCD,#9B8EE0 55%,#B8ACEE)',
+            color: gwmStage === 'show' ? '#9ca3af' : '#fff',
+            borderRadius: 12, padding: '12px 16px',
+            fontSize: 14, fontWeight: 700,
+            transition: 'all .4s',
+          }}>
+            {gwmStage === 'show' ? '⏳ Question will appear once the timer ends…' : 'Which numbers did you see, in order?'}
+          </div>
+
+          {/* Options — only during hidden stage */}
+          <div id="zone-gwm-options" style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10,
+            opacity: gwmStage === 'show' ? 0.25 : 1,
+            transition: 'opacity .4s',
+          }}>
+            {[
+              { k: 'A', label: '7 · 2 · 9 · 4', sel: true  },
+              { k: 'B', label: '7 · 9 · 2 · 4', sel: false },
+              { k: 'C', label: '2 · 7 · 4 · 9', sel: false },
+              { k: 'D', label: '4 · 9 · 2 · 7', sel: false },
+            ].map(opt => (
+              <div key={opt.k} style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+                borderRadius: 12,
+                border: opt.sel ? '1.5px solid #7c6fcd' : '1.5px solid #e8e4f8',
+                background: opt.sel ? 'rgba(124,111,205,0.07)' : '#fff',
+              }}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: 7,
+                  background: opt.sel ? '#7c6fcd' : '#ede9fe',
+                  color: opt.sel ? '#fff' : '#7c6fcd',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 800,
+                }}>{opt.k}</div>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1340', letterSpacing: 1 }}>{opt.label}</span>
+              </div>
+            ))}
+          </div>
+
+        </div>
+
+        {/* footer */}
+        <div style={{ background: '#fff', borderTop: '1.5px solid #ede9fe', padding: '10px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 500 }}>Memory Question 1 of 8</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#a78bfa', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span>💡</span> Double-click your answer to submit
+          </span>
+        </div>
+      </div>
+      )}
+
+      {/* DIMMER + RING + TOOLTIP (only during tour phase) */}
+      {phase === 'tour' && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,10,40,0.55)', zIndex: 10, transition: 'opacity .4s' }} />
+          {ring && (
+            <div style={{
+              position: 'fixed',
+              left: ring.left, top: ring.top, width: ring.width, height: ring.height,
+              borderRadius: 16, border: `3px solid ${ring.color}`,
+              boxShadow: `0 0 0 5px ${ring.color}33`,
+              zIndex: 15, pointerEvents: 'none',
+              transition: 'all .5s cubic-bezier(.4,0,.2,1)',
+            }} />
+          )}
+          <div style={{
+            position: 'fixed', left: tipPos.left, top: tipPos.top, opacity: tipPos.opacity,
+            zIndex: 20, background: '#fff', borderRadius: 20, padding: '24px 26px', width: 320,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+            transition: 'opacity .35s, transform .45s cubic-bezier(.4,0,.2,1)',
+            transform: tipPos.opacity ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.97)',
+          }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%', background: s.color,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 14,
+            }}>{s.emoji}</div>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a1340', marginBottom: 8 }}>{s.title}</h3>
+            <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6 }}>{s.body}</p>
+            <div style={{ display: 'flex', gap: 6, marginTop: 16, justifyContent: 'center' }}>
+              {STEPS.map((_, j) => (
+                <div key={j} style={{
+                  width: j === stepIdx ? 22 : 8, height: 8,
+                  borderRadius: j === stepIdx ? 4 : '50%',
+                  background: j === stepIdx ? '#7c6fcd' : '#e5e7eb',
+                  transition: 'all .3s',
+                }} />
+              ))}
+            </div>
+            <button onClick={next} style={{
+              marginTop: 18, width: '100%', padding: 13, borderRadius: 12, border: 'none',
+              background: 'linear-gradient(135deg,#7c6fcd,#4c3d9e)',
+              color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}>
+              <span>{isLast ? 'Got it!' : 'Next'}</span>
+              <span>{isLast ? '🎉' : '→'}</span>
+            </button>
+            <button onClick={skip} style={{
+              marginTop: 10, width: '100%', padding: 9, borderRadius: 10, border: 'none',
+              background: 'transparent', color: '#a78bfa', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            }}>Skip tour</button>
+          </div>
+        </>
+      )}
+
+      {/* DONE SCREEN */}
+      {phase === 'done' && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,10,40,0.7)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 24, padding: '44px 40px', maxWidth: 420, width: '90%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+            <div style={{ fontSize: 52 }}>🎉</div>
+            <h2 style={{ fontSize: 26, fontWeight: 900, color: '#1a1340', margin: '16px 0 10px' }}>You're all set!</h2>
+            <p style={{ fontSize: 15, color: '#6b7280', lineHeight: 1.6, marginBottom: 28 }}>You know how every part of the screen works. Now let's try a real question!</p>
+            <button onClick={onDone} style={{ width: '100%', padding: 15, borderRadius: 14, border: 'none', background: 'linear-gradient(135deg,#7c6fcd,#4c3d9e)', color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer' }}>
+              Got it — Start Practice →
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // MAIN TEST RUNNER — UNIVERSAL
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function TestRunner() {
@@ -2534,6 +3180,19 @@ export default function TestRunner() {
     setGuideMsg(randomGuide(correct ? 'correct' : 'wrong', item?.isPractice));
     sendResponse(chosen, correct, false);
   }, [pendingChoice, answered, memoryOptionsLocked, shuffledOpts, correctShuffledIdx, item, sendResponse]);
+
+  // Double-click shortcut: select + submit in one gesture
+  const chooseAndSubmit = useCallback((si) => {
+    if (answered || memoryOptionsLocked) return;
+    clearInterval(timerRef.current);
+    setPendingChoice(si);
+    setAnswered(true);
+    setSelectedIdx(si);
+    const chosen = shuffledOpts[si];
+    const correct = si === correctShuffledIdx;
+    setGuideMsg(randomGuide(correct ? 'correct' : 'wrong', item?.isPractice));
+    sendResponse(chosen, correct, false);
+  }, [answered, memoryOptionsLocked, shuffledOpts, correctShuffledIdx, item, sendResponse]);
 
   sendResponseRef.current = sendResponse;
 
@@ -2874,6 +3533,8 @@ export default function TestRunner() {
             background: `linear-gradient(90deg,transparent,${cgColor},transparent)`,
             borderRadius: 99, zIndex: 1 }} />
 
+          {/* Question prompt rendered inline in the left column below */}
+
           {/* ── BODY: left | divider | right ── */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
@@ -2889,11 +3550,37 @@ export default function TestRunner() {
                 </div>
               </div>
 
-              {/* Prompt — hidden during memory reveal, shown once stimulus is gone */}
+              {/* Prompt — clear "QUESTION" label + readable prompt text */}
               {(renderMode !== 'memory_reveal' || !memoryOptionsLocked) && item.prompt && (
-                <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", color: '#1A1A2E', fontSize: 'clamp(13px,1.4vw,17px)', flexShrink: 0, marginBottom: 8, lineHeight: 1.45,
-                  ...(renderMode === 'memory_reveal' ? { animation: 'popIn 0.3s ease-out' } : {}) }}
-                  dangerouslySetInnerHTML={{ __html: (item.prompt || '').replace(/<hl>/g, `<span style="display:inline-block;background:${cgColor};color:white;padding:0 8px 1px;border-radius:8px;font-size:13px">`).replace(/<\/hl>/g, '</span>') }} />
+                <div style={{
+                  flexShrink: 0, marginBottom: 10,
+                  ...(renderMode === 'memory_reveal' ? { animation: 'popIn 0.3s ease-out' } : {}),
+                }}>
+                  {/* Clear label so kids know this is the question to read */}
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: cgColor, color: '#fff',
+                    padding: '3px 10px 3px 8px', borderRadius: 6,
+                    fontSize: 10, fontWeight: 800, letterSpacing: '1px',
+                    marginBottom: 6,
+                  }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    QUESTION
+                  </div>
+                  <div style={{
+                    padding: '10px 14px',
+                    background: '#fff',
+                    border: `1.5px solid ${cgColor}33`,
+                    borderLeft: `4px solid ${cgColor}`,
+                    borderRadius: 10,
+                    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+                    color: '#1A1A2E',
+                    fontSize: 'clamp(15px, 1.55vw, 18px)',
+                    fontWeight: 600,
+                    lineHeight: 1.45,
+                  }}
+                  dangerouslySetInnerHTML={{ __html: (item.prompt || '').replace(/<hl>/g, `<span style="display:inline-block;background:${cgColor};color:white;padding:0 8px 1px;border-radius:6px;font-size:0.95em;font-weight:700">`).replace(/<\/hl>/g, '</span>') }} />
+                </div>
               )}
 
               {/* Stimulus card — fills all remaining space, SVG contained inside */}
@@ -2952,7 +3639,9 @@ export default function TestRunner() {
                   }
                   return (
                     <OptionBtn key={si} opt={opt} letter={letters[si]}
-                      onClick={() => choose(si)} state={state}
+                      onClick={() => choose(si)}
+                      onDoubleClick={() => chooseAndSubmit(si)}
+                      state={state}
                       disabled={answered || memoryOptionsLocked} isVisual={isVisual} />
                   );
                 })}
