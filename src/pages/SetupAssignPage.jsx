@@ -54,6 +54,7 @@ export default function SetupAssignPage() {
   // Step 4 state — Result
   const [assigning, setAssigning] = useState(false);
   const [assignResult, setAssignResult] = useState(null);
+  const [tokenUploads, setTokenUploads] = useState({}); // { tokenKey: { file, status, error } }
 
   // Load item stats and students — re-fetch when batch changes
   const loadData = useCallback(async () => {
@@ -305,7 +306,36 @@ export default function SetupAssignPage() {
                   </div>
 
                   {/* Skipped items — unified error panel with smart Fix button */}
-                  {uploadResult.skippedItems && uploadResult.skippedItems.length > 0 && (
+                  {uploadResult.skippedItems && uploadResult.skippedItems.length > 0 && (() => {
+                    const allTokens = uploadResult.skippedItems.flatMap(item =>
+                      (item.unresolvedTokens || []).map(t => {
+                        const raw = t.token.replace(/^excel_img:/, '');
+                        return { ...t, filePath: raw, key: raw };
+                      })
+                    );
+                    const uniqueTokens = [...new Map(allTokens.map(t => [t.key, t])).values()];
+                    const uploadedCount = uniqueTokens.filter(t => tokenUploads[t.key]?.status === 'done').length;
+
+                    const handleTokenFile = (tokenKey, file) => {
+                      setTokenUploads(s => ({ ...s, [tokenKey]: { file, status: 'ready' } }));
+                    };
+                    const handleTokenUpload = async (token) => {
+                      const st = tokenUploads[token.key];
+                      if (!st?.file) return;
+                      setTokenUploads(s => ({ ...s, [token.key]: { ...s[token.key], status: 'uploading' } }));
+                      try {
+                        await api.upload('/tokens/upload-item-image', st.file, { targetPath: token.filePath });
+                        setTokenUploads(s => ({ ...s, [token.key]: { ...s[token.key], status: 'done' } }));
+                      } catch (err) {
+                        setTokenUploads(s => ({ ...s, [token.key]: { ...s[token.key], status: 'error', error: err.message } }));
+                      }
+                    };
+                    const handleUploadAll = async () => {
+                      const ready = uniqueTokens.filter(t => tokenUploads[t.key]?.file && tokenUploads[t.key]?.status !== 'done');
+                      for (const token of ready) await handleTokenUpload(token);
+                    };
+
+                    return (
                     <div className="rounded-md overflow-hidden" style={{ border: '1px solid var(--blush)' }}>
                       <div
                         className="px-4 py-3 flex items-start justify-between gap-3"
@@ -315,78 +345,128 @@ export default function SetupAssignPage() {
                           <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" style={{ color: 'var(--blush)' }} />
                           <div className="min-w-0">
                             <div className="font-medium text-sm" style={{ color: 'var(--blush)' }}>
-                              {uploadResult.skippedItems.length} item{uploadResult.skippedItems.length !== 1 ? 's' : ''} not uploaded — missing shapes
+                              {uniqueTokens.length} missing image{uniqueTokens.length !== 1 ? 's' : ''} — upload them below
                             </div>
-                            <div className="text-xs mt-0.5" style={{ color: 'var(--blush)' }}>
-                              Click <strong>Fix Missing Shapes</strong> to add them now
+                            <div className="text-xs mt-0.5" style={{ color: 'var(--slate)' }}>
+                              {uploadedCount > 0 && <span style={{ color: 'var(--sage)' }}>{uploadedCount} uploaded · </span>}
+                              {uniqueTokens.length - uploadedCount} remaining
                             </div>
                           </div>
                         </div>
-                        <button
-                          onClick={() => navigate('/admin/tokens', {
-                            state: { fromUpload: true, skippedItems: uploadResult.skippedItems }
-                          })}
-                          className="btn-primary !px-3 !py-2 text-xs flex-shrink-0"
-                        >
-                          <Wrench size={12} /> Fix Missing Shapes
-                        </button>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <button
+                            onClick={handleUploadAll}
+                            disabled={!uniqueTokens.some(t => tokenUploads[t.key]?.file && tokenUploads[t.key]?.status !== 'done')}
+                            className="btn-primary !px-3 !py-2 text-xs"
+                          >
+                            <Upload size={12} /> Upload All
+                          </button>
+                          <button
+                            onClick={() => navigate('/admin/tokens', {
+                              state: { fromUpload: true, skippedItems: uploadResult.skippedItems }
+                            })}
+                            className="btn-secondary !px-3 !py-2 text-xs"
+                          >
+                            <Wrench size={12} /> Token Manager
+                          </button>
+                        </div>
                       </div>
 
-                      {/* Token error table */}
-                      <div className="max-h-56 overflow-y-auto" style={{ background: 'var(--paper)' }}>
-                        <table className="table-pro">
-                          <thead>
-                            <tr>
-                              <th>Item ID</th>
-                              <th>Row</th>
-                              <th>Missing Token(s)</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {uploadResult.skippedItems.map((item, i) => (
-                              <tr key={i}>
-                                <td className="font-mono font-semibold">{item.itemId}</td>
-                                <td className="font-mono tabular-nums" style={{ color: 'var(--slate)' }}>
-                                  {item.excelRow ? `row ${item.excelRow}` : '—'}
-                                </td>
-                                <td>
-                                  <div className="flex flex-wrap gap-1">
-                                    {item.unresolvedTokens?.map((t, j) => (
-                                      <button
-                                        key={j}
-                                        onClick={() => navigate('/admin/tokens', {
-                                          state: { fromUpload: true, skippedItems: uploadResult.skippedItems, focusToken: t.token }
-                                        })}
-                                        className="rounded-sm px-1.5 py-0.5 font-mono text-[10px] font-semibold transition-colors"
-                                        style={{
-                                          background: 'var(--blush-pale)',
-                                          color: 'var(--blush)',
-                                          border: '1px solid var(--blush)',
-                                        }}
-                                        title="Click to fix this token"
-                                      >
-                                        {t.token}
-                                      </button>
-                                    ))}
+                      {/* Token upload list */}
+                      <div className="max-h-72 overflow-y-auto" style={{ background: 'var(--paper)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          {uniqueTokens.map((token) => {
+                            const st = tokenUploads[token.key] || {};
+                            const isDone = st.status === 'done';
+                            const isUploading = st.status === 'uploading';
+                            const isError = st.status === 'error';
+                            return (
+                              <div key={token.key} className="flex items-center gap-3 px-4 py-2.5"
+                                style={{
+                                  background: isDone ? '#f0fdf4' : 'var(--card)',
+                                  borderBottom: '1px solid var(--border)',
+                                }}>
+                                {/* Status icon */}
+                                <div style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 6,
+                                  background: isDone ? '#dcfce7' : isError ? '#fef2f2' : 'var(--warm)',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontSize: 11,
+                                }}>
+                                  {isDone ? '✓' : isError ? '✕' : '📷'}
+                                </div>
+
+                                {/* Filename */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-mono text-xs font-semibold truncate"
+                                    style={{ color: isDone ? 'var(--sage)' : 'var(--ink)' }}
+                                    title={token.filePath}>
+                                    {token.filePath.split('/').pop()}
                                   </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                  <div className="text-[10px] truncate" style={{ color: 'var(--slate)' }}>
+                                    custom/{token.filePath}
+                                  </div>
+                                  {isError && (
+                                    <div className="text-[10px] mt-0.5" style={{ color: 'var(--blush)' }}>{st.error}</div>
+                                  )}
+                                </div>
+
+                                {/* Upload control */}
+                                {isDone ? (
+                                  <span className="text-[10px] font-bold px-2 py-1 rounded"
+                                    style={{ background: '#dcfce7', color: '#16a34a' }}>
+                                    Uploaded
+                                  </span>
+                                ) : (
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    <label className="text-[11px] font-semibold px-2.5 py-1.5 rounded cursor-pointer"
+                                      style={{
+                                        background: st.file ? 'var(--warm)' : 'var(--blush-pale)',
+                                        color: st.file ? 'var(--ink)' : 'var(--blush)',
+                                        border: `1px solid ${st.file ? 'var(--border)' : 'var(--blush)'}`,
+                                      }}>
+                                      {st.file ? st.file.name.slice(0, 20) : 'Choose file'}
+                                      <input type="file" accept=".svg,.png,.jpg,.jpeg,.webp"
+                                        style={{ display: 'none' }}
+                                        onChange={e => e.target.files[0] && handleTokenFile(token.key, e.target.files[0])}
+                                      />
+                                    </label>
+                                    <button
+                                      onClick={() => handleTokenUpload(token)}
+                                      disabled={!st.file || isUploading}
+                                      className="text-[11px] font-bold px-2.5 py-1.5 rounded"
+                                      style={{
+                                        background: st.file ? 'var(--blush)' : 'var(--warm)',
+                                        color: st.file ? '#fff' : 'var(--slate)',
+                                        border: 'none',
+                                        cursor: st.file ? 'pointer' : 'not-allowed',
+                                        opacity: st.file ? 1 : 0.5,
+                                      }}>
+                                      {isUploading ? '...' : '↑ Upload'}
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div
-                        className="px-3 py-2 text-[10px]"
-                        style={{
-                          background: 'var(--warm)',
-                          color: 'var(--slate)',
-                          borderTop: '1px solid var(--border)',
-                        }}
-                      >
-                        Click any token above to jump straight to fixing it in Token Manager
+
+                      {/* Footer: re-import hint */}
+                      <div className="px-4 py-2.5 flex items-center justify-between"
+                        style={{ background: 'var(--warm)', borderTop: '1px solid var(--border)' }}>
+                        <span className="text-[10px]" style={{ color: 'var(--slate)' }}>
+                          After uploading all images, re-upload the Excel to import the skipped items
+                        </span>
+                        {uploadedCount === uniqueTokens.length && uniqueTokens.length > 0 && (
+                          <span className="text-[10px] font-bold px-2 py-1 rounded"
+                            style={{ background: '#dcfce7', color: '#16a34a' }}>
+                            All images uploaded — ready to re-import
+                          </span>
+                        )}
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
                 </div>
               )}
             </div>

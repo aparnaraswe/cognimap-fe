@@ -571,8 +571,23 @@ function TextItemDisplay({ item, renderMode }) {
   const isMathLike = /[+\-×÷=<>%]/.test(seqStr) || /\d+\s*,\s*\d+/.test(seqStr);
   if (isMathLike) {
     return (
-      <div className="mb-5 p-5 text-center rounded-2xl" style={cardStyle}>
-        <span className="text-xl font-black font-mono tracking-wider" style={{ color: '#1e293b' }}>
+      <div className="mb-4 p-6 text-center rounded-2xl" style={{
+        ...cardStyle,
+        background: '#fff',
+        border: '2px solid #e2e8f0',
+      }}>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1.5px', color: '#94a3b8', textTransform: 'uppercase', marginBottom: 10 }}>
+          Solve this
+        </div>
+        <span style={{
+          fontFamily: "'Fredoka One', 'Courier New', monospace",
+          fontSize: 'clamp(22px, 3vw, 32px)',
+          fontWeight: 800,
+          color: '#1e293b',
+          letterSpacing: '2px',
+          lineHeight: 1.5,
+          wordBreak: 'break-word',
+        }}>
           {seqStr}
         </span>
       </div>
@@ -581,8 +596,22 @@ function TextItemDisplay({ item, renderMode }) {
 
   // Plain text stimulus
   return (
-    <div className="mb-5 p-4 text-base font-semibold leading-relaxed" style={{ ...cardStyle, color: '#374151' }}>
-      {seqStr}
+    <div className="mb-4 p-5 text-center rounded-2xl" style={{
+      ...cardStyle,
+      background: '#fff',
+      border: '2px solid #e2e8f0',
+    }}>
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1.5px', color: '#94a3b8', textTransform: 'uppercase', marginBottom: 8 }}>
+        Read carefully
+      </div>
+      <span style={{
+        fontSize: 'clamp(15px, 1.8vw, 20px)',
+        fontWeight: 600,
+        lineHeight: 1.6,
+        color: '#1e293b',
+      }}>
+        {seqStr}
+      </span>
     </div>
   );
 }
@@ -917,22 +946,30 @@ function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVis
       </button>
     );
   }
+  const isTextOnly = !isImg && !isExcelImg && !isShape && !isPos && !isRatio && !isGsLabel;
+  const displayText = opt.label || (isTextOnly ? opt.value : '');
+  const isLongText = displayText && String(displayText).length > 50;
   return (
     <button
       disabled={disabled}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
-      className={`rounded-2xl flex items-center gap-3 px-4 py-3.5 text-left transition-all duration-200 ${faded ? 'opacity-20 pointer-events-none' : ''}`}
+      className={`rounded-2xl flex items-center gap-3 text-left transition-all duration-200 ${faded ? 'opacity-20 pointer-events-none' : ''}`}
       style={{
         border: `2px solid ${border}`,
         background: bg,
         cursor: disabled ? 'default' : 'pointer',
         boxShadow: shadow,
         transition: baseTransition,
-        minHeight: 56,
+        minHeight: isTextOnly ? 52 : 56,
+        padding: isTextOnly ? '10px 16px' : '14px 16px',
       }}>
-      <span className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-        style={{ background: letterBg, color: letterColor }}>
+      <span style={{
+        width: 32, height: 32, borderRadius: 9,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 12, fontWeight: 800, flexShrink: 0,
+        background: letterBg, color: letterColor,
+      }}>
         {letter}
       </span>
       <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -942,9 +979,17 @@ function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVis
         {isRatio && <RatioToken token={opt.value} sz={40} />}
         {isShape && !isImg && !isExcelImg && !isPos && !isRatio && <TokenRenderer token={opt.value} sz={40} />}
         {isGsLabel && <TokenRenderer token={opt.value} sz={40} />}
-        <span className="text-[14px] font-semibold leading-snug" style={{ color: '#1e293b' }}>
-          {opt.label || (!isImg && !isExcelImg && !isShape && !isPos && !isRatio && !isGsLabel ? opt.value : '')}
-        </span>
+        {displayText && (
+          <span style={{
+            fontSize: isLongText ? 13 : 15,
+            fontWeight: 600,
+            lineHeight: 1.4,
+            color: '#1e293b',
+            wordBreak: 'break-word',
+          }}>
+            {displayText}
+          </span>
+        )}
       </div>
     </button>
   );
@@ -3538,8 +3583,11 @@ export default function TestRunner() {
           {/* ── BODY: left | divider | right ── */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1px 1fr', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
-            {/* ── LEFT: question SVG ── */}
-            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, background: '#F3F0FB' }}>
+            {/* ── LEFT: question + stimulus ── */}
+            <div style={{
+              padding: '12px 14px', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, background: '#F3F0FB',
+              justifyContent: (renderMode === 'text' || renderMode === 'text_passage') ? 'center' : 'flex-start',
+            }}>
 
               {/* Domain chip */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, marginBottom: 8 }}>
@@ -3626,8 +3674,8 @@ export default function TestRunner() {
                   </div>
                 </div>
               ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minHeight: 0,
-                overflow: 'hidden',
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minHeight: 0,
+                overflow: 'hidden', justifyContent: 'center',
                 animation: renderMode === 'memory_reveal' ? 'popIn 0.3s ease-out' : 'none' }}>
                 {shuffledOpts.map((opt, si) => {
                   let state = null;
