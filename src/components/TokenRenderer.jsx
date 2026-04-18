@@ -918,10 +918,18 @@ export function ExcelImgToken({ token, sz=72, card=false }) {
 
   // Inline SVG — fills parent container; preserveAspectRatio="xMidYMid meet" keeps aspect ratio.
   // Parent CSS (.stim-inner, .opt-thumb) controls the actual container size.
+  // Constrain to consistent max dimensions so all images render at uniform size.
   if (isSvg && inlineSvg) {
     return (
       <div
-        style={{ width: '100%', height: '100%', lineHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        style={{
+          width: '100%', height: '100%', lineHeight: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: card ? 8 : 4,
+          maxWidth: card ? '100%' : 200,
+          maxHeight: card ? '100%' : 200,
+          margin: '0 auto',
+        }}
         dangerouslySetInnerHTML={{ __html: inlineSvg }}
       />
     );
@@ -930,6 +938,7 @@ export function ExcelImgToken({ token, sz=72, card=false }) {
   if (failed) return fallbackEl;
 
   // IMG — fills parent container with object-fit:contain (maintains aspect ratio).
+  // Constrain to consistent max dimensions for uniform rendering.
   return (
     <img
       src={src}
@@ -940,6 +949,9 @@ export function ExcelImgToken({ token, sz=72, card=false }) {
         height: '100%',
         objectFit: 'contain',
         display: 'block',
+        maxWidth: card ? '100%' : 200,
+        maxHeight: card ? '100%' : 200,
+        margin: '0 auto',
       }}
       onError={() => setFailed(true)}
     />

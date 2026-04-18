@@ -867,7 +867,7 @@ function MemoryRevealDisplay({ item, onRevealComplete }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // OPTION BUTTON — clean white theme (supports text AND visual)
 // ═══════════════════════════════════════════════════════════════════════════════
-function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVisual, stretch }) {
+function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVisual, stretchText }) {
   // Strip obj: prefix — it's an internal GWM qualifier, never shown to the user
   const val = String(opt.value || '').replace(/^obj:/, '');
   const isImg = val.startsWith('img_');
@@ -926,8 +926,12 @@ function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVis
           display: 'block',
           width: '100%',
         }}>
-        {/* Image fills the entire button, edge-to-edge */}
-        <div className="opt-thumb" style={{ position: 'absolute', inset: 0 }}>
+        {/* Image fills the entire button, constrained to uniform size */}
+        <div className="opt-thumb" style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 6,
+        }}>
           <TokenRenderer token={opt.value} sz={200} />
         </div>
         {/* Letter badge — absolute overlay, top-left corner */}
@@ -949,6 +953,8 @@ function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVis
   const isTextOnly = !isImg && !isExcelImg && !isShape && !isPos && !isRatio && !isGsLabel;
   const displayText = opt.label || (isTextOnly ? opt.value : '');
   const isLongText = displayText && String(displayText).length > 50;
+  // Stretch: apply to ALL text-based options regardless of domain render mode
+  const stretch = stretchText && isTextOnly;
   return (
     <button
       disabled={disabled}
@@ -961,8 +967,8 @@ function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVis
         cursor: disabled ? 'default' : 'pointer',
         boxShadow: shadow,
         transition: baseTransition,
-        minHeight: isTextOnly ? 52 : 56,
-        padding: stretch ? '12px 20px' : (isTextOnly ? '10px 16px' : '14px 16px'),
+        minHeight: stretch ? 52 : 56,
+        padding: stretch ? '12px 20px' : '14px 16px',
         ...(stretch ? { flex: 1 } : {}),
       }}>
       <span style={{
@@ -1605,6 +1611,10 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
       <OnboardingTour
         variant={domain === 'gwm' ? 'gwm' : 'standard'}
         onDone={() => setStep('practice')}
+        domainMeta={meta}
+        domainCfg={cfg}
+        batteryInfo={batteryInfo}
+        domain={domain}
       />
     );
   }
@@ -1668,7 +1678,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                   display: 'inline-flex', alignItems: 'center', gap: 5,
                   background: OCB, color: OCD, padding: '3px 10px', borderRadius: 20,
                   fontSize: 10, fontWeight: 800, border: `1px solid ${OC}33`,
-                }}>{meta.icon} {meta.label}</div>
+                }}>{sectionIcon} {sectionLabel}</div>
                 <div style={{ flex: 1 }} />
                 <div style={{
                   position: 'relative',
@@ -1679,7 +1689,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                   boxShadow: `0 0 0 4px ${OC}22`,
                 }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  00:45
+                  {timePerQ}
                   {/* annotation #4 */}
                   <span style={{
                     position: 'absolute', top: -10, right: -10,
@@ -1986,7 +1996,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                       </div>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minHeight: 0,
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minHeight: 0,
                       overflow: 'hidden', animation: 'popIn 0.3s ease-out' }}>
                       {pracOptsWrapped.map((opt, si) => {
                         let state = null;
@@ -1998,7 +2008,8 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                         return (
                           <OptionBtn key={si} opt={opt} letter={letters[si]}
                             onClick={() => handlePickPrac(si)} state={state}
-                            disabled={practiceAnswered} isVisual={pracIsVisual} />
+                            disabled={practiceAnswered} isVisual={pracIsVisual}
+                            stretchText />
                         );
                       })}
                     </div>
@@ -2224,7 +2235,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                 </div>
 
                 {/* Options */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minHeight: 0, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minHeight: 0, overflow: 'hidden' }}>
                   {pracOptsWrapped.map((opt, si) => {
                     let state = null;
                     if (practiceAnswered) {
@@ -2235,7 +2246,8 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                     return (
                       <OptionBtn key={si} opt={opt} letter={letters[si]}
                         onClick={() => handlePickPrac(si)} state={state}
-                        disabled={practiceAnswered} isVisual={pracIsVisual} />
+                        disabled={practiceAnswered} isVisual={pracIsVisual}
+                        stretchText />
                     );
                   })}
                 </div>
@@ -2633,34 +2645,59 @@ const TOUR_STEPS = [
 
 // ── GWM (working memory) tour — show → hide → options flow ──
 const TOUR_STEPS_GWM = [
-  { zone: 'zone-gwm-timer',    color: '#f59e0b', emoji: '1️⃣', title: 'Memory Timer',
-    body: 'First, a short timer starts. While it runs, look carefully at what appears on screen — you need to remember it!',
+  { zone: 'zone-gwm-timer',    color: '#f59e0b', emoji: '1️⃣', title: 'Timer Starts',
+    body: 'A countdown timer begins. Pay close attention — items will appear on screen one by one.',
     pad: 6, tip: { side: 'bottom-left' } },
-  { zone: 'zone-gwm-stimulus', color: '#06b6d4', emoji: '2️⃣', title: 'Memorise This',
-    body: 'Numbers, letters or pictures will appear here. Focus — they will disappear when the timer runs out.',
+  { zone: 'zone-gwm-stimulus', color: '#06b6d4', emoji: '2️⃣', title: 'Items Appear One by One',
+    body: 'Numbers, letters, or pictures will flash on screen one at a time. Watch carefully and try to remember each one in order.',
     pad: 8, tip: { side: 'right' } },
-  { zone: 'zone-gwm-stimulus', color: '#7c6fcd', emoji: '3️⃣', title: 'It Disappears',
-    body: 'Once time is up, what you saw will vanish. Now the question and the answer options will appear.',
+  { zone: 'zone-gwm-stimulus', color: '#7c6fcd', emoji: '3️⃣', title: 'Everything Disappears',
+    body: 'Once all items have been shown, the screen goes blank. You now need to recall what you saw. The question and options will appear.',
     pad: 8, tip: { side: 'right' } },
-  { zone: 'zone-gwm-options',  color: '#10b981', emoji: '4️⃣', title: 'Answer from Memory',
-    body: 'Pick the option that matches what you remember. Click once to choose, double-click to submit instantly.',
+  { zone: 'zone-gwm-question', color: '#ef4444', emoji: '4️⃣', title: 'Read the Question',
+    body: 'A question appears asking about what you just memorised — the order, which item was shown, or what was missing.',
+    pad: 8, tip: { side: 'right' } },
+  { zone: 'zone-gwm-options',  color: '#10b981', emoji: '5️⃣', title: 'Answer from Memory',
+    body: 'Pick the answer that matches what you remember. Click once to choose, double-click to submit instantly.',
     pad: 8, tip: { side: 'left' } },
 ];
 
-function OnboardingTour({ onDone, variant = 'standard' }) {
+function OnboardingTour({ onDone, variant = 'standard', domainMeta, domainCfg, batteryInfo, domain }) {
   const isGwm = variant === 'gwm';
+  const secInfo = batteryInfo?.sectionInfo?.[domain];
+  const totalQuestions = secInfo?.itemCount || domainCfg?.items || 10;
+  const timePerQ = domainCfg?.time || '~7 min';
+  const sectionLabel = domainMeta?.label || 'Assessment';
+  const sectionIcon = domainMeta?.icon || '📝';
   const STEPS = isGwm ? TOUR_STEPS_GWM : TOUR_STEPS;
   const [phase, setPhase] = useState('start'); // 'start' | 'tour' | 'done'
   const [stepIdx, setStepIdx] = useState(0);
   const [ring, setRing] = useState(null);
   const [tipPos, setTipPos] = useState({ left: 0, top: 0, opacity: 0 });
-  const [gwmStage, setGwmStage] = useState('show'); // 'show' | 'hidden'
+  const [gwmStage, setGwmStage] = useState('show'); // 'show' | 'hidden' | 'question'
+  const [gwmRevealIdx, setGwmRevealIdx] = useState(0); // which item is currently showing (0-3)
 
-  // When GWM tour advances to step 3 (index 2), flip stimulus → hidden so kids see the transition
+  // GWM tour: animate stages based on current step
   useEffect(() => {
     if (!isGwm) return;
-    if (stepIdx >= 2) setGwmStage('hidden'); else setGwmStage('show');
+    if (stepIdx <= 1) { setGwmStage('show'); setGwmRevealIdx(0); }
+    else if (stepIdx === 2) setGwmStage('hidden');
+    else setGwmStage('question');
   }, [isGwm, stepIdx]);
+
+  // Animate items appearing one by one during 'show' stage
+  useEffect(() => {
+    if (!isGwm || gwmStage !== 'show' || phase !== 'tour') return;
+    setGwmRevealIdx(0);
+    const items = [0, 1, 2, 3];
+    let i = 0;
+    const timer = setInterval(() => {
+      i++;
+      if (i >= items.length) { clearInterval(timer); return; }
+      setGwmRevealIdx(i);
+    }, 800);
+    return () => clearInterval(timer);
+  }, [isGwm, gwmStage, phase]);
 
   const positionFor = useCallback((i) => {
     const s = STEPS[i];
@@ -2736,10 +2773,10 @@ function OnboardingTour({ onDone, variant = 'standard' }) {
         {/* top bar */}
         <div id="zone-topbar" style={{ background: '#fff', borderBottom: '1.5px solid #ede9fe', padding: '10px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ background: '#ede9fe', color: '#6d28d9', fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span>✳</span> Pattern Reasoning
+            <span>{sectionIcon}</span> {sectionLabel}
           </div>
           <div id="zone-timer" style={{ background: '#fff7ed', color: '#c2410c', border: '1.5px solid #fed7aa', borderRadius: 20, padding: '5px 14px', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-            ⏱ 00:45
+            ⏱ {timePerQ}
           </div>
         </div>
 
@@ -2798,7 +2835,7 @@ function OnboardingTour({ onDone, variant = 'standard' }) {
 
         {/* footer — no submit button; double-click option submits */}
         <div style={{ background: '#fff', borderTop: '1.5px solid #ede9fe', padding: '12px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 13, color: '#9ca3af', fontWeight: 500 }}>Question 1 of 10</span>
+          <span style={{ fontSize: 13, color: '#9ca3af', fontWeight: 500 }}>Question 1 of {totalQuestions}</span>
           <span style={{ fontSize: 11, fontWeight: 600, color: '#a78bfa', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <span>💡</span> Double-click your answer to submit
           </span>
@@ -2816,7 +2853,7 @@ function OnboardingTour({ onDone, variant = 'standard' }) {
         {/* top bar with memory timer */}
         <div style={{ background: '#fff', borderBottom: '1.5px solid #ede9fe', padding: '10px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ background: '#ede9fe', color: '#6d28d9', fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span>🧠</span> Working Memory
+            <span>{sectionIcon}</span> {sectionLabel}
           </div>
           <div id="zone-gwm-timer" style={{
             background: gwmStage === 'show' ? '#fef3c7' : '#fff7ed',
@@ -2824,63 +2861,84 @@ function OnboardingTour({ onDone, variant = 'standard' }) {
             padding: '5px 14px', fontSize: 13, fontWeight: 800,
             display: 'flex', alignItems: 'center', gap: 6,
           }}>
-            ⏱ {gwmStage === 'show' ? 'Memorise · 00:05' : 'Time up!'}
+            ⏱ {gwmStage === 'show' ? `Memorise · ${timePerQ}` : 'Time up!'}
           </div>
         </div>
 
         {/* body */}
         <div style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 14, minHeight: 340 }}>
 
-          {/* Stimulus zone — visible only during 'show' */}
+          {/* Stimulus zone — items appear one by one during 'show', blank during 'hidden'/'question' */}
           <div id="zone-gwm-stimulus" style={{
             background: gwmStage === 'show' ? '#f9f8fe' : '#f3f2f8',
             border: '1.5px dashed ' + (gwmStage === 'show' ? '#a78bfa' : '#d4d0e4'),
-            borderRadius: 14, padding: 20, minHeight: 110,
+            borderRadius: 14, padding: 20, minHeight: 120,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
             transition: 'all .4s',
           }}>
             {gwmStage === 'show' ? (
+              /* Items revealed one at a time */
               ['7', '2', '9', '4'].map((n, i) => (
                 <div key={i} style={{
-                  width: 58, height: 58, borderRadius: 12, background: '#fff',
-                  border: '1.5px solid #ddd6fe', boxShadow: '0 4px 12px rgba(124,111,205,0.15)',
+                  width: 62, height: 62, borderRadius: 12,
+                  background: i <= gwmRevealIdx ? '#fff' : 'rgba(237,233,254,0.5)',
+                  border: i <= gwmRevealIdx ? '2px solid #a78bfa' : '1.5px dashed #d4d0e4',
+                  boxShadow: i === gwmRevealIdx ? '0 0 0 4px rgba(167,139,250,0.25), 0 4px 12px rgba(124,111,205,0.2)' : i < gwmRevealIdx ? '0 2px 6px rgba(124,111,205,0.1)' : 'none',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 26, fontWeight: 800, color: '#4c3d9e',
-                }}>{n}</div>
+                  fontSize: 28, fontWeight: 800,
+                  color: i <= gwmRevealIdx ? '#4c3d9e' : 'transparent',
+                  transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  transform: i === gwmRevealIdx ? 'scale(1.1)' : 'scale(1)',
+                }}>
+                  {i <= gwmRevealIdx ? n : '?'}
+                </div>
               ))
             ) : (
-              <div style={{ textAlign: 'center', color: '#9ca3af' }}>
-                <div style={{ fontSize: 32 }}>👁️‍🗨️</div>
-                <div style={{ fontSize: 12, fontWeight: 700, marginTop: 4 }}>Hidden — answer from memory</div>
+              /* Hidden — everything gone */
+              <div style={{ textAlign: 'center', color: '#9ca3af', padding: 10 }}>
+                <div style={{ fontSize: 36, marginBottom: 6 }}>🫣</div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>Items hidden!</div>
+                <div style={{ fontSize: 11, marginTop: 2, color: '#b8b5c8' }}>What did you see? Answer from memory below.</div>
               </div>
             )}
           </div>
 
-          {/* Hidden-state callout target */}
-          <div id="zone-gwm-hidden" style={{
-            height: gwmStage === 'hidden' ? 0 : 0, // invisible anchor, re-uses stimulus rect through the ring via id
-            pointerEvents: 'none',
-          }} />
+          {/* Show indicator of which item is being revealed */}
+          {gwmStage === 'show' && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} style={{
+                  width: i <= gwmRevealIdx ? 20 : 8, height: 6, borderRadius: 3,
+                  background: i <= gwmRevealIdx ? '#7c6fcd' : '#e5e7eb',
+                  transition: 'all 0.3s',
+                }} />
+              ))}
+            </div>
+          )}
 
-          {/* Question — shown always, but greyed during 'show' */}
-          <div style={{
+          {/* Question — hidden during show, appears after hidden */}
+          <div id="zone-gwm-question" style={{
             background: gwmStage === 'show' ? '#f3f2f8' : 'linear-gradient(135deg,#7C6FCD,#9B8EE0 55%,#B8ACEE)',
-            color: gwmStage === 'show' ? '#9ca3af' : '#fff',
-            borderRadius: 12, padding: '12px 16px',
-            fontSize: 14, fontWeight: 700,
+            color: gwmStage === 'show' ? '#d4d0e4' : '#fff',
+            borderRadius: 12, padding: '14px 18px',
+            fontSize: 15, fontWeight: 700,
             transition: 'all .4s',
+            opacity: gwmStage === 'show' ? 0.4 : 1,
           }}>
-            {gwmStage === 'show' ? '⏳ Question will appear once the timer ends…' : 'Which numbers did you see, in order?'}
+            {gwmStage === 'show'
+              ? '⏳ Question appears after items are hidden…'
+              : 'Which numbers did you see, in the correct order?'}
           </div>
 
-          {/* Options — only during hidden stage */}
+          {/* Options — faded during show, active during hidden/question */}
           <div id="zone-gwm-options" style={{
             display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10,
-            opacity: gwmStage === 'show' ? 0.25 : 1,
+            opacity: gwmStage === 'show' ? 0.2 : 1,
             transition: 'opacity .4s',
+            pointerEvents: gwmStage === 'show' ? 'none' : 'auto',
           }}>
             {[
-              { k: 'A', label: '7 · 2 · 9 · 4', sel: true  },
+              { k: 'A', label: '7 · 2 · 9 · 4', sel: gwmStage !== 'show' },
               { k: 'B', label: '7 · 9 · 2 · 4', sel: false },
               { k: 'C', label: '2 · 7 · 4 · 9', sel: false },
               { k: 'D', label: '4 · 9 · 2 · 7', sel: false },
@@ -2890,6 +2948,7 @@ function OnboardingTour({ onDone, variant = 'standard' }) {
                 borderRadius: 12,
                 border: opt.sel ? '1.5px solid #7c6fcd' : '1.5px solid #e8e4f8',
                 background: opt.sel ? 'rgba(124,111,205,0.07)' : '#fff',
+                transition: 'all 0.3s',
               }}>
                 <div style={{
                   width: 24, height: 24, borderRadius: 7,
@@ -2907,7 +2966,7 @@ function OnboardingTour({ onDone, variant = 'standard' }) {
 
         {/* footer */}
         <div style={{ background: '#fff', borderTop: '1.5px solid #ede9fe', padding: '10px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 500 }}>Memory Question 1 of 8</span>
+          <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 500 }}>Memory Question 1 of {totalQuestions}</span>
           <span style={{ fontSize: 11, fontWeight: 600, color: '#a78bfa', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <span>💡</span> Double-click your answer to submit
           </span>
@@ -3675,8 +3734,8 @@ export default function TestRunner() {
                   </div>
                 </div>
               ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: isVisual ? 6 : 8, flex: 1, minHeight: 0,
-                overflow: 'hidden', justifyContent: isVisual ? 'center' : 'stretch',
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minHeight: 0,
+                overflow: 'hidden',
                 animation: renderMode === 'memory_reveal' ? 'popIn 0.3s ease-out' : 'none' }}>
                 {shuffledOpts.map((opt, si) => {
                   let state = null;
@@ -3692,7 +3751,7 @@ export default function TestRunner() {
                       onDoubleClick={() => chooseAndSubmit(si)}
                       state={state}
                       disabled={answered || memoryOptionsLocked} isVisual={isVisual}
-                      stretch={!isVisual} />
+                      stretchText />
                   );
                 })}
               </div>
