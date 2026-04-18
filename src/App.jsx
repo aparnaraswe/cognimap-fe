@@ -22,6 +22,7 @@ import SettingsPage from './pages/SettingsPage';
 import AccessControlPage from './pages/AccessControlPage';
 import TokenManagerPage from './pages/TokenManagerPage';
 import ShapeLibraryPage from './pages/ShapeLibraryPage';
+import MissingImagesPage from './pages/MissingImagesPage';
 import DomainInstructionsPage from './pages/DomainInstructionsPage';
 import ReportConfigPage from './pages/ReportConfigPage';
 import StudentDashboard from './pages/StudentDashboard';
@@ -134,6 +135,7 @@ function AppRoutes() {
         <Route path="batches" element={<BatchesPage />} />
         <Route path="tokens" element={<TokenManagerPage />} />
         <Route path="shapes" element={<ShapeLibraryPage />} />
+        <Route path="missing-images" element={<MissingImagesPage />} />
         <Route path="audit" element={<AuditPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="access-control" element={<AccessControlPage />} />

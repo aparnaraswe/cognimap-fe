@@ -122,6 +122,7 @@ function AdminLayout() {
     // { to: '/admin/guardian-assign', icon: Shield, label: 'Guardian Assign', roles: ['super_admin', 'client_admin'] },
     // { to: '/admin/tokens', icon: Shapes, label: 'Token Manager', roles: ['super_admin', 'psychologist'] },
     { to: '/admin/shapes', icon: Image, label: 'Shape Library', roles: ['super_admin', 'psychologist'] },
+    { to: '/admin/missing-images', icon: Upload, label: 'Missing Images', roles: ['super_admin', 'psychologist'] },
     { to: '/admin/domain-instructions', icon: BookOpen, label: 'Domain Instructions', roles: ['super_admin', 'psychologist'] },
     // { to: '/admin/audit', icon: Activity, label: 'Audit Log', roles: ['super_admin'] },
     { to: '/admin/settings', icon: Settings, label: 'Settings', roles: ['super_admin'] },
@@ -149,7 +150,7 @@ function AdminLayout() {
     },
     {
       label: 'Manage',
-      items: links.filter(l => ['/admin/items', '/admin/users', '/admin/sources', '/admin/onboarding', '/admin/shapes', '/admin/domain-instructions'].includes(l.to)),
+      items: links.filter(l => ['/admin/items', '/admin/users', '/admin/sources', '/admin/onboarding', '/admin/shapes', '/admin/missing-images', '/admin/domain-instructions'].includes(l.to)),
     },
     {
       label: 'Analytics',

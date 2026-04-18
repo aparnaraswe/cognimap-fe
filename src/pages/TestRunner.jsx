@@ -867,7 +867,7 @@ function MemoryRevealDisplay({ item, onRevealComplete }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // OPTION BUTTON — clean white theme (supports text AND visual)
 // ═══════════════════════════════════════════════════════════════════════════════
-function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVisual }) {
+function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVisual, stretch }) {
   // Strip obj: prefix — it's an internal GWM qualifier, never shown to the user
   const val = String(opt.value || '').replace(/^obj:/, '');
   const isImg = val.startsWith('img_');
@@ -962,12 +962,13 @@ function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVis
         boxShadow: shadow,
         transition: baseTransition,
         minHeight: isTextOnly ? 52 : 56,
-        padding: isTextOnly ? '10px 16px' : '14px 16px',
+        padding: stretch ? '12px 20px' : (isTextOnly ? '10px 16px' : '14px 16px'),
+        ...(stretch ? { flex: 1 } : {}),
       }}>
       <span style={{
-        width: 32, height: 32, borderRadius: 9,
+        width: stretch ? 38 : 32, height: stretch ? 38 : 32, borderRadius: stretch ? 10 : 9,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 12, fontWeight: 800, flexShrink: 0,
+        fontSize: stretch ? 14 : 12, fontWeight: 800, flexShrink: 0,
         background: letterBg, color: letterColor,
       }}>
         {letter}
@@ -981,7 +982,7 @@ function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVis
         {isGsLabel && <TokenRenderer token={opt.value} sz={40} />}
         {displayText && (
           <span style={{
-            fontSize: isLongText ? 13 : 15,
+            fontSize: stretch ? (isLongText ? 14 : 17) : (isLongText ? 13 : 15),
             fontWeight: 600,
             lineHeight: 1.4,
             color: '#1e293b',
@@ -3674,8 +3675,8 @@ export default function TestRunner() {
                   </div>
                 </div>
               ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minHeight: 0,
-                overflow: 'hidden', justifyContent: 'center',
+              <div style={{ display: 'flex', flexDirection: 'column', gap: isVisual ? 6 : 8, flex: 1, minHeight: 0,
+                overflow: 'hidden', justifyContent: isVisual ? 'center' : 'stretch',
                 animation: renderMode === 'memory_reveal' ? 'popIn 0.3s ease-out' : 'none' }}>
                 {shuffledOpts.map((opt, si) => {
                   let state = null;
@@ -3690,7 +3691,8 @@ export default function TestRunner() {
                       onClick={() => choose(si)}
                       onDoubleClick={() => chooseAndSubmit(si)}
                       state={state}
-                      disabled={answered || memoryOptionsLocked} isVisual={isVisual} />
+                      disabled={answered || memoryOptionsLocked} isVisual={isVisual}
+                      stretch={!isVisual} />
                   );
                 })}
               </div>
