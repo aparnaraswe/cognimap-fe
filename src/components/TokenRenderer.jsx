@@ -1,18 +1,30 @@
 ﻿/**
- * TOKEN RENDERERS — CogniMap IRT-CAT Visual Engine v4.1
+ * TOKEN RENDERERS — CogniMap IRT-CAT Visual Engine v4.2 (patched)
  *
- * UPDATED: Every shape is now rendered as an actual SVG visual everywhere:
- *   - Question stimulus → TokenRenderer visual
- *   - Answer options    → shape preview + token label
- *   - Feedback states   → shape shown on correct/wrong reveal
+ * CHANGES vs v4.1 — surgical, not architectural:
+ *   1. ImgBox stripped of chrome (no bg, no border, no padding).
+ *      Chrome now belongs to QuestionShell's StimulusSlot / OptionSlot.
+ *      Fixes the "white box around SVGs" problem.
  *
- * IMAGE RESOLUTION (v4.2):
- *   All excel_img: tokens resolve to /custom/<filename>
- *   Place all PNGs in:  public/custom/  (FE) or  public/custom/  (BE static)
+ *   2. ExcelImgToken always fills parent (width/height 100%).
+ *      Removed the branch that preserved original SVG px dimensions,
+ *      since the slot above now dictates size uniformly.
+ *      preserveAspectRatio="xMidYMid meet" handles aspect ratios.
  *
- * New exports:
- *   QuizTokenQuestion   — drop-in quiz question UI with full token rendering
- *   TokenPreviewGrid    — dev tool: renders every token in a list as a grid
+ * NOT CHANGED (deliberately):
+ *   - SIZE_MULT — sizes (sm/md/lg/xl) are question content, not presentation.
+ *     A "small circle vs large circle" item depends on this.
+ *   - Token parser logic
+ *   - Shape dispatch
+ *   - Compositional tokens (pos_, ratio:, img_, ...)
+ *   - Sprite / custom-shape / SVG resolution order
+ *   - QuizTokenQuestion — left for backwards compat; new code should
+ *     use QuestionShell + ItemBankQuestion instead.
+ *
+ * CONTRACT
+ *   The renderer outputs a bare visual that fills 100% of its parent.
+ *   It does NOT add padding, borders, or backgrounds.
+ *   The parent (a StimulusSlot or OptionSlot) owns all chrome.
  */
 
 import { useState, useEffect } from 'react';
@@ -87,6 +99,8 @@ const ROT_MAP = {
   bottom_left:225, bottom_right:135,
 };
 
+// PRESERVED — sizes are question content. A "small circle vs large circle"
+// comparison item depends on this. Do not remove.
 const SIZE_MULT = {
   tiny:0.3, small:0.4, medium:0.65, large:1.0, extralarge:1.3,
   extra_large:1.3, extraLarge:1.3,
@@ -135,16 +149,22 @@ function SvgBox({ children, sz, className='' }) {
   );
 }
 
-function ImgBox({ children, sz, label, bg }) {
+// ═══════════════════════════════════════════════════════════════════
+// PATCH #1 — ImgBox stripped of chrome
+// ═══════════════════════════════════════════════════════════════════
+// Previously added bg, border, padding, and an optional label. That chrome
+// now lives in QuestionShell's slots. ImgBox is a transparent passthrough.
+// The `label` and `bg` props are accepted for API compat but ignored.
+// ═══════════════════════════════════════════════════════════════════
+function ImgBox({ children }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-0.5 rounded-xl"
-      style={{ width:sz+24, minHeight:sz+16, padding:'8px 10px',
-        background:bg||'rgba(0,0,0,0.02)', border:'1px solid #E7E5E4' }}>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%', height: '100%',
+    }}>
       {children}
-      {label && (
-        <span className="text-[10px] font-semibold text-center leading-tight"
-          style={{ color:'#78716C', maxWidth:sz+16 }}>{label}</span>
-      )}
     </div>
   );
 }
@@ -360,6 +380,7 @@ export function PosToken({ token, sz=48 }) {
 }
 
 // ═══ MODULE 2: ShapeToken ═══
+// SIZE_MULT is preserved — sizes are question content.
 export function ShapeToken({ token, sz=48 }) {
   if (!token||token==='?') return (
     <div className="flex items-center justify-center rounded-xl"
@@ -584,7 +605,7 @@ function FigurePart({ token, sz }) {
   const renderer=shapes[cl];
   if (!renderer) { logMissingToken(token,'missing_figure_part'); return null; }
   return (
-    <ImgBox sz={sz} bg="rgba(8,145,178,0.04)">
+    <ImgBox>
       <SvgBox sz={sz}>{renderer()}</SvgBox>
     </ImgBox>
   );
@@ -614,9 +635,9 @@ function ComplexPattern({ token, sz }) {
   const tSz=22, tx=50-tSz/2+(rand()-0.5)*40, ty=50-tSz/2+(rand()-0.5)*40;
   shapes.push(<polygon key="t" points={`${tx+tSz/2},${ty} ${tx+tSz},${ty+tSz} ${tx},${ty+tSz}`} fill="none" stroke="#1C1917" strokeWidth="2" strokeOpacity="0.3" strokeLinejoin="round" />);
   return (
-    <ImgBox sz={sz+12} bg="rgba(8,145,178,0.04)">
+    <ImgBox>
       <SvgBox sz={sz+8}>
-        <rect x="1" y="1" width="98" height="98" rx="6" fill="#FAFAF9" stroke="#D6D3D1" strokeWidth="1" />
+        <rect x="1" y="1" width="98" height="98" rx="6" fill="transparent" stroke="none" />
         {shapes}
       </SvgBox>
     </ImgBox>
@@ -637,15 +658,9 @@ const CUSTOM_IMAGE_BASE = '/custom/';
 //   const CUSTOM_IMAGE_BASE = `${import.meta.env.VITE_API_BASE}/custom/`;
 // ═══════════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════════════
-// SVG Processing — uses DOMParser (native browser XML parser) for
-// reliable, consistent handling of SVGs of any dimension.
-// ═══════════════════════════════════════════════════════════════════
-
 const svgParser = new DOMParser();
 const svgSerializer = new XMLSerializer();
 
-/** Parse SVG text into an SVGSVGElement. Returns null on failure. */
 function parseSvg(svgText) {
   if (!svgText || !svgText.includes('<svg')) return null;
   try {
@@ -656,18 +671,17 @@ function parseSvg(svgText) {
   } catch { return null; }
 }
 
-/** Serialize an SVGSVGElement back to a string. */
 function serializeSvg(svgEl) {
   return svgSerializer.serializeToString(svgEl);
 }
 
-/**
- * Stimulus SVG (card=true): keep original viewBox and original dimensions.
- * Only ensure a viewBox exists (for scaling) and add preserveAspectRatio.
- * Do NOT force width/height to 100% — different SVGs are intentionally
- * different sizes (e.g. pattern reasoning: small vs large stimuli).
- * Use max-width/max-height via CSS to prevent overflow, but keep natural size.
- */
+// ═══════════════════════════════════════════════════════════════════
+// PATCH #2 — normalizeStimulusSvg always fills parent
+// ═══════════════════════════════════════════════════════════════════
+// Previously preserved original px dimensions when available. That made
+// stimulus size vary wildly across questions. Now always fills 100%
+// of the slot; preserveAspectRatio="xMidYMid meet" handles AR correctly.
+// ═══════════════════════════════════════════════════════════════════
 function normalizeStimulusSvg(svgText) {
   const svg = parseSvg(svgText);
   if (!svg) return null;
@@ -682,34 +696,24 @@ function normalizeStimulusSvg(svgText) {
     svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
   }
 
-  // Keep original px dimensions if they exist — this preserves size differences.
-  // Only set max constraints so large SVGs don't overflow the container.
-  // Small SVGs stay small, large ones scale down.
-  if (origW && origH) {
-    svg.setAttribute('width', String(origW));
-    svg.setAttribute('height', String(origH));
-    svg.setAttribute('style', 'max-width:100%;max-height:100%;');
-  } else {
-    // No original dimensions — fill container
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '100%');
-  }
-
+  // Always fill parent — slot dictates size. Do NOT preserve original px.
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  svg.setAttribute('style', 'max-width:100%;max-height:100%;');
 
   return serializeSvg(svg);
 }
 
 /**
- * Option thumbnail SVG (card=false): remove white bg, compute real content
- * bounding box via the DOM parser, crop viewBox, scale tiny shapes.
- * Returns null if no geometry found — caller falls back to normalizeStimulusSvg.
+ * Option thumbnail SVG: remove white bg, compute real content bounding box
+ * via DOM parser, crop viewBox, scale tiny shapes. Returns null if no geometry
+ * found — caller falls back to normalizeStimulusSvg.
  */
 function optimizeSvgForOption(svgText) {
   const svg = parseSvg(svgText);
   if (!svg) return null;
 
-  // Remove full-canvas white background rects
   svg.querySelectorAll('rect').forEach(rect => {
     const fill = (rect.getAttribute('fill') || '').toLowerCase();
     if ((fill === '#ffffff' || fill === 'white' || fill === 'rgb(255, 255, 255)' || fill === 'rgb(255,255,255)')
@@ -718,7 +722,6 @@ function optimizeSvgForOption(svgText) {
     }
   });
 
-  // ── Compute content bounding box from all geometry elements ──
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
   const extend = (x, y) => {
@@ -728,17 +731,15 @@ function optimizeSvgForOption(svgText) {
     }
   };
 
-  // Circles
   svg.querySelectorAll('circle').forEach(el => {
     const cx = parseFloat(el.getAttribute('cx')) || 0;
     const cy = parseFloat(el.getAttribute('cy')) || 0;
     const r  = parseFloat(el.getAttribute('r'))  || 0;
-    if (r < 3) return; // skip tiny anchor dots
+    if (r < 3) return;
     extend(cx - r, cy - r);
     extend(cx + r, cy + r);
   });
 
-  // Ellipses
   svg.querySelectorAll('ellipse').forEach(el => {
     const cx = parseFloat(el.getAttribute('cx')) || 0;
     const cy = parseFloat(el.getAttribute('cy')) || 0;
@@ -748,7 +749,6 @@ function optimizeSvgForOption(svgText) {
     extend(cx + rx, cy + ry);
   });
 
-  // Rects (remaining after bg removal)
   svg.querySelectorAll('rect').forEach(el => {
     const x = parseFloat(el.getAttribute('x')) || 0;
     const y = parseFloat(el.getAttribute('y')) || 0;
@@ -759,7 +759,6 @@ function optimizeSvgForOption(svgText) {
     extend(x + w, y + h);
   });
 
-  // Polygons & Polylines
   svg.querySelectorAll('polygon, polyline').forEach(el => {
     const pts = (el.getAttribute('points') || '').trim().split(/[\s,]+/).map(Number);
     for (let i = 0; i < pts.length - 1; i += 2) {
@@ -767,17 +766,14 @@ function optimizeSvgForOption(svgText) {
     }
   });
 
-  // Lines
   svg.querySelectorAll('line').forEach(el => {
     extend(parseFloat(el.getAttribute('x1')) || 0, parseFloat(el.getAttribute('y1')) || 0);
     extend(parseFloat(el.getAttribute('x2')) || 0, parseFloat(el.getAttribute('y2')) || 0);
   });
 
-  // Paths — parse M, L, H, V, C, S, Q, T, A commands for coordinates
   svg.querySelectorAll('path').forEach(el => {
     const d = el.getAttribute('d') || '';
     let curX = 0, curY = 0;
-    // Match command letter followed by its numeric arguments
     const cmdRe = /([MLHVCSQTAZmlhvcsqtaz])\s*([-\d.,\s]*)/g;
     let m;
     while ((m = cmdRe.exec(d)) !== null) {
@@ -798,9 +794,8 @@ function optimizeSvgForOption(svgText) {
         case 'V':
           for (const n of nums) { curY = isRel ? curY + n : n; extend(curX, curY); }
           break;
-        case 'C': // cubic bezier: x1,y1 x2,y2 x,y
+        case 'C':
           for (let i = 0; i < nums.length - 5; i += 6) {
-            // Include control points for bounding
             const bx = isRel ? curX : 0, by = isRel ? curY : 0;
             extend(bx + nums[i], by + nums[i+1]);
             extend(bx + nums[i+2], by + nums[i+3]);
@@ -820,7 +815,7 @@ function optimizeSvgForOption(svgText) {
             }
           }
           break;
-        case 'A': // arc: rx ry rotation large-arc sweep x y
+        case 'A':
           for (let i = 0; i < nums.length - 6; i += 7) {
             curX = isRel ? curX + nums[i+5] : nums[i+5];
             curY = isRel ? curY + nums[i+6] : nums[i+6];
@@ -832,9 +827,8 @@ function optimizeSvgForOption(svgText) {
     }
   });
 
-  if (minX === Infinity) return null; // no geometry found
+  if (minX === Infinity) return null;
 
-  // Scale up tiny shapes (circles with max radius < 40px)
   const circles = svg.querySelectorAll('circle');
   let maxRadius = 0;
   circles.forEach(el => {
@@ -849,7 +843,6 @@ function optimizeSvgForOption(svgText) {
     });
   }
 
-  // Crop viewBox to content + padding
   const contentW = maxX - minX;
   const contentH = maxY - minY;
   const pad = Math.max(20, Math.min(contentW, contentH) * 0.15);
@@ -869,76 +862,13 @@ export function ExcelImgToken({ token, sz=72, card=false }) {
   const src = `${CUSTOM_IMAGE_BASE}${filename}`;
   const isSvg = filename.toLowerCase().endsWith('.svg');
 
-  const [failed, setFailed] = useState(false);
-  const [inlineSvg, setInlineSvg] = useState(null);
-
-  // Detect Gf (Pattern Reasoning) from filename — e.g. "matrix_2x2/Gf_B1_023_optA.svg"
+  // Detect Gf (Pattern Reasoning) from filename
   const isGf = /\bGf[_\/]/i.test(filename);
 
-  useEffect(() => {
-    setFailed(false);
-    setInlineSvg(null);
-    if (isSvg) {
-      fetch(src)
-        .then(r => r.ok ? r.text() : Promise.reject())
-        .then(text => {
-          // Stimulus (card=true): always keep original viewBox/sizing
-          // Gf options: also keep original sizing (size/placement is part of the question)
-          // Other options: crop viewBox to content, scale tiny shapes
-          let processed;
-          if (card || isGf) {
-            processed = normalizeStimulusSvg(text);
-          } else {
-            processed = optimizeSvgForOption(text) ?? normalizeStimulusSvg(text);
-          }
-          if (processed) setInlineSvg(processed);
-        })
-        .catch(() => setFailed(true));
-    }
-  }, [src, isSvg, card, isGf]);
-
-  const fallbackEl = (
-    <span style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center',
-      padding: 4, wordBreak: 'break-all', maxWidth: sz, lineHeight: 1.4 }}>
-      {filename}
-    </span>
-  );
-
-  // DEBUG LABEL — shown in bottom-left corner of every excel_img so you can verify the path
-  const debugLabel = (
-    <div style={{
-      position: 'absolute', bottom: 0, left: 0, right: 0,
-      background: 'rgba(0,0,0,0.55)', color: '#fff',
-      fontSize: 9, lineHeight: 1.3, padding: '2px 4px',
-      wordBreak: 'break-all', pointerEvents: 'none', zIndex: 10,
-    }}>
-      {src}
-    </div>
-  );
-
-  // Inline SVG — fills parent container; preserveAspectRatio="xMidYMid meet" keeps aspect ratio.
-  // Parent CSS (.stim-inner, .opt-thumb) controls the actual container size.
-  // Constrain to consistent max dimensions so all images render at uniform size.
-  if (isSvg && inlineSvg) {
-    return (
-      <div
-        style={{
-          width: '100%', height: '100%', lineHeight: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: card ? 8 : 4,
-          maxWidth: card ? '100%' : 200,
-          maxHeight: card ? '100%' : 200,
-          margin: '0 auto',
-        }}
-        dangerouslySetInnerHTML={{ __html: inlineSvg }}
-      />
-    );
-  }
-
-  if (failed) return fallbackEl;
-
-  // IMG — fills parent container with object-fit:contain (maintains aspect ratio).
-  // Constrain to consistent max dimensions for uniform rendering.
+  // ALL excel_img: files use <img> tag directly — never fetch + inline.
+  // Uploaded SVGs can be huge (10MB+ with embedded base64 PNGs) and freeze
+  // the browser if parsed/injected via dangerouslySetInnerHTML.
+  // The browser's native <img> handles any file size efficiently.
   return (
     <img
       src={src}
@@ -953,7 +883,7 @@ export function ExcelImgToken({ token, sz=72, card=false }) {
         maxHeight: card ? '100%' : 200,
         margin: '0 auto',
       }}
-      onError={() => setFailed(true)}
+      onError={e => { e.target.style.display = 'none'; }}
     />
   );
 }
@@ -963,13 +893,13 @@ export function ImgToken({ token, sz=72 }) {
   if (!token||!token.startsWith('img_')) return null;
   const cl=token.slice(4);
   if (cl.startsWith('seesaw')) return (
-    <ImgBox sz={sz+30} bg="rgba(217,119,6,0.04)">
+    <ImgBox>
       <Seesaw spec={cl.replace('seesaw_','')} sz={sz+26} />
     </ImgBox>
   );
   const spriteM=cl.match(/^sprite_(\w+)_(\d+)/);
   if (spriteM) return (
-    <ImgBox sz={sz} label={`${spriteM[2]} ${spriteM[1]}${parseInt(spriteM[2])>1?'s':''}`}>
+    <ImgBox>
       <SpriteGrid fruit={spriteM[1]} n={parseInt(spriteM[2])} sz={sz} />
     </ImgBox>
   );
@@ -980,7 +910,7 @@ export function ImgToken({ token, sz=72 }) {
   );
   const barM=cl.match(/^bar_(\d+)/);
   if (barM) return (
-    <ImgBox sz={sz} label={barM[1]}><BarToken n={parseInt(barM[1])} sz={sz} /></ImgBox>
+    <ImgBox><BarToken n={parseInt(barM[1])} sz={sz} /></ImgBox>
   );
   const fp=FigurePart({token,sz});
   if (fp) return fp;
@@ -1000,7 +930,7 @@ export function ImgToken({ token, sz=72 }) {
     const cells=[]; for(let i=0;i<rows*cols2;i++)cells.push(symbols[Math.floor(rand2()*symbols.length)]);
     const cellSz=Math.min(Math.floor((sz+20)/Math.max(rows,cols2)),18);
     return (
-      <div className="rounded-lg" style={{ padding:4, background:'#FAFAF9', border:'1px solid #D6D3D1' }}>
+      <div className="rounded-lg" style={{ padding:4 }}>
         <div style={{ display:'grid', gridTemplateColumns:`repeat(${cols2},${cellSz}px)`, gap:1, fontFamily:'monospace', fontSize:Math.max(9,cellSz-4), lineHeight:`${cellSz}px`, textAlign:'center', color:P.ink }}>
           {cells.map((s,i)=><div key={i}>{s}</div>)}
         </div>
@@ -1008,12 +938,12 @@ export function ImgToken({ token, sz=72 }) {
     );
   }
   if (cl.startsWith('3d')||cl.startsWith('solid')||cl.startsWith('cube')||cl.startsWith('prism')||cl.startsWith('pyramid')||cl.startsWith('net_')||cl.startsWith('isometric')||cl.startsWith('paper_fold')) return (
-    <ImgBox sz={sz} bg="rgba(8,145,178,0.06)">
+    <ImgBox>
       <SvgBox sz={sz}><polygon points="50,8 92,35 70,92 30,92 8,35" fill="none" stroke={P.pri} strokeWidth="2" /></SvgBox>
     </ImgBox>
   );
   if (cl.includes('graph')||cl.includes('parabola')||cl.includes('scatter')||cl.includes('histogram')||cl.includes('boxplot')) return (
-    <ImgBox sz={sz} bg="rgba(217,119,6,0.04)">
+    <ImgBox>
       <SvgBox sz={sz}>
         <line x1="12" y1="88" x2="12" y2="8" stroke="#78716C" strokeWidth="1.5" />
         <line x1="12" y1="88" x2="92" y2="88" stroke="#78716C" strokeWidth="1.5" />
@@ -1022,7 +952,7 @@ export function ImgToken({ token, sz=72 }) {
     </ImgBox>
   );
   if (cl.startsWith('venn')) return (
-    <ImgBox sz={sz}>
+    <ImgBox>
       <SvgBox sz={sz}>
         <circle cx="38" cy="45" r="28" fill="none" stroke="#DC2626" strokeWidth="2" opacity="0.6" />
         <circle cx="62" cy="45" r="28" fill="none" stroke="#6366F1" strokeWidth="2" opacity="0.6" />
@@ -1030,7 +960,7 @@ export function ImgToken({ token, sz=72 }) {
     </ImgBox>
   );
   if (cl.startsWith('tree')) return (
-    <ImgBox sz={sz}>
+    <ImgBox>
       <SvgBox sz={sz}>
         <circle cx="50" cy="12" r="6" fill={P.acc} />
         <line x1="50" y1="18" x2="30" y2="50" stroke="#78716C" strokeWidth="1.5" />
@@ -1045,21 +975,20 @@ export function ImgToken({ token, sz=72 }) {
     const rand3=seeded(hashStr(token));
     const cells=[]; for(let i=0;i<36;i++)cells.push(symbols[Math.floor(rand3()*symbols.length)]);
     return (
-      <div className="rounded-lg" style={{ padding:4, background:'#FAFAF9', border:'1px solid #D6D3D1' }}>
+      <div className="rounded-lg" style={{ padding:4 }}>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(6,18px)', gap:1, fontFamily:'monospace', fontSize:12, lineHeight:'18px', textAlign:'center', color:P.ink }}>
           {cells.map((s,i)=><div key={i}>{s}</div>)}
         </div>
       </div>
     );
   }
-  const dn=cl.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  // Generic fallback — no chrome, just a minimal placeholder
   return (
-    <ImgBox sz={sz} bg="rgba(0,0,0,0.03)">
+    <ImgBox>
       <SvgBox sz={Math.round(sz*0.5)}>
         <rect x="5" y="5" width="90" height="90" rx="10" fill="none" stroke={P.sub} strokeWidth="3" strokeDasharray="8 6" />
         <text x="50" y="54" textAnchor="middle" dominantBaseline="middle" fontSize="16" fontWeight="600" fill={P.sub} fontFamily="system-ui">IMG</text>
       </SvgBox>
-      <span className="text-[9px] font-semibold text-center leading-tight" style={{ color:'#78716C', maxWidth:sz+4 }}>{dn.slice(0,28)}</span>
     </ImgBox>
   );
 }
@@ -1071,9 +1000,6 @@ export function ImgToken({ token, sz=72 }) {
 //   2. Custom DB shapes      (customShapesCache from /api/tokens/svg-shapes)
 //   3. Sprite sheet          (shapes-manifest.json → shapes.png)
 //   4. Plain text / ? placeholder (last resort)
-//
-// canRenderAsSVG() detects whether step 1 or 2 can handle the token
-// so we never go to the sprite sheet unnecessarily.
 // ═══════════════════════════════════════════════════════════════════
 
 function canRenderAsSVG(token) {
@@ -1094,16 +1020,13 @@ function canRenderAsSVG(token) {
 function SpriteOrShapeToken({ token, sz, textFallback=false }) {
   const manifest = useSpriteManifest();
 
-  // Tier 1: SVG (built-in + custom DB shapes)
   if (canRenderAsSVG(token)) {
     return <ShapeToken token={token} sz={sz} />;
   }
 
-  // Tier 2: Sprite sheet
   const sprite = lookupSprite(token, manifest);
   if (sprite) return <SpriteToken token={token} sz={sz} />;
 
-  // Tier 3: Fallback
   if (textFallback) {
     return <span className="font-semibold" style={{ fontSize:Math.min(16,sz*0.35), color:P.ink }}>{token}</span>;
   }
@@ -1114,12 +1037,12 @@ function SpriteOrShapeToken({ token, sz, textFallback=false }) {
 // ═══════════════════════════════════════════════════════════════════
 // UNIVERSAL ENTRY POINT
 // ═══════════════════════════════════════════════════════════════════
-// card=true adds a polished white-background panel (used in stimulus display)
+// card=true → stimulus context; card=false → option context.
+// Slot above (StimulusSlot / OptionSlot) owns chrome and dimensions.
 export default function TokenRenderer({ token, sz=48, card=false }) {
   useEffect(()=>{ loadCustomShapes(); loadSpriteManifest(); },[]);
   if (!token||token==='') return null;
 
-  // Gs-specific formats
   const gsResult = GsTokenDispatch({ token, sz });
   if (gsResult !== null) return gsResult;
 
@@ -1130,16 +1053,12 @@ export default function TokenRenderer({ token, sz=48, card=false }) {
     </div>
   );
 
-  // obj: prefix (Gwm visual memory tokens) — strip prefix and re-render as shape
   if (typeof token==='string'&&token.startsWith('obj:')) return <TokenRenderer token={token.slice(4)} sz={sz} card={card} />;
 
   if (typeof token==='string'&&token.startsWith('pos_')) return <PosToken token={token} sz={sz} />;
   if (typeof token==='string'&&token.startsWith('img_')) return <ImgToken token={token} sz={sz} />;
   if (typeof token==='string'&&token.startsWith('excel_img:')) return <ExcelImgToken token={token} sz={sz} card={card} />;
   if (typeof token==='string'&&token.startsWith('ratio:')) return <RatioToken token={token} sz={sz} />;
-  // Shape tokens (e.g. circle_md, star_sm, red_circle) — render via GsSymbolSVG.
-  // These tokens are Gs visual symbols; they are NOT PNG files in /custom/.
-  // The stimulus uses gs_sym:<token> (with TARGET badge); options use bare token names.
   if (typeof token==='string'&&token.includes('_')&&!token.startsWith('pos_')&&!token.startsWith('img_')&&!token.startsWith('ratio:')) return <GsSymbolSVG token={token} sz={sz} />;
   if (/^-?\d+\.?\d*$/.test(String(token))) return (
     <span className="font-mono font-bold" style={{ fontSize:Math.min(24,sz*0.5), color:P.ink }}>{token}</span>
@@ -1156,19 +1075,13 @@ export default function TokenRenderer({ token, sz=48, card=false }) {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// QuizTokenQuestion
+// QuizTokenQuestion — LEGACY COMPONENT
+// Kept for backwards compatibility. New code should use QuestionShell
+// + ItemBankQuestion from './QuestionShell'.
 // ═══════════════════════════════════════════════════════════════════
 export function QuizTokenQuestion({
-  question,
-  onSelect,
-  selected,
-  correct,
-  timeUp=false,
-  onNext,
-  questionNumber=1,
-  totalQuestions=15,
-  xp=0,
-  xpMax=15,
+  question, onSelect, selected, correct, timeUp=false, onNext,
+  questionNumber=1, totalQuestions=15, xp=0, xpMax=15,
 }) {
   const LABELS = ['A','B','C','D','E','F'];
   const options = question?.options || [];
@@ -1199,15 +1112,10 @@ export function QuizTokenQuestion({
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(160deg, #0F172A 0%, #1E1B4B 50%, #0F172A 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '16px', fontFamily: 'system-ui, -apple-system, sans-serif',
     }}>
       <div style={{ width: '100%', maxWidth: 540 }}>
-
-        {/* Header bar */}
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
           <span style={{ fontSize:13, fontWeight:700, color:'#FBBF24', letterSpacing:'0.04em' }}>★ XP</span>
           <div style={{ flex:1, height:8, borderRadius:99, background:'rgba(255,255,255,0.1)', overflow:'hidden' }}>
@@ -1218,85 +1126,33 @@ export function QuizTokenQuestion({
             {xp}/{xpMax}
           </span>
         </div>
-
-        {/* Question card */}
         <div style={{
-          background:'rgba(255,255,255,0.06)',
-          border:'1px solid rgba(255,255,255,0.1)',
-          borderRadius:20,
-          padding:'28px 24px 24px',
+          background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)',
+          borderRadius:20, padding:'28px 24px 24px',
         }}>
-
-          {/* Stimulus */}
           <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:16, marginBottom:24 }}>
             <div style={{
-              background:'rgba(255,255,255,0.05)',
-              border:'1px solid rgba(255,255,255,0.12)',
-              borderRadius:16,
-              padding:'20px 28px',
-              display:'flex',
-              alignItems:'center',
-              justifyContent:'center',
-              minWidth:120,
-              minHeight:100,
+              background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.12)',
+              borderRadius:16, padding:'20px 28px', display:'flex',
+              alignItems:'center', justifyContent:'center', minWidth:120, minHeight:100,
             }}>
               <TokenRenderer token={stimulus} sz={72} card={true} />
             </div>
-            <div style={{
-              fontFamily:'ui-monospace, monospace',
-              fontSize:13,
-              color:'rgba(255,255,255,0.45)',
-              background:'rgba(255,255,255,0.06)',
-              borderRadius:8,
-              padding:'4px 12px',
-            }}>
-              {stimulus}
-            </div>
           </div>
-
-          {/* Instruction */}
-          <div style={{
-            textAlign:'center',
-            fontSize:11,
-            fontWeight:600,
-            letterSpacing:'0.1em',
-            color:'rgba(255,255,255,0.3)',
-            marginBottom:14,
-            textTransform:'uppercase',
-          }}>
-            Choose one
-          </div>
-
-          {/* Options */}
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {options.map((opt, i) => {
               const tok = typeof opt === 'string' ? opt : opt.token;
               const label = typeof opt === 'string' ? null : opt.label;
               const state = optionState(tok);
               const style = optionStyles[state] || optionStyles.idle;
-
               return (
-                <button
-                  key={tok}
-                  onClick={() => onSelect && onSelect(tok)}
+                <button key={tok} onClick={() => onSelect && onSelect(tok)}
                   disabled={!!selected || timeUp}
-                  style={{
-                    ...style,
-                    borderRadius: 14,
-                    padding: '14px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
+                  style={{ ...style, borderRadius: 14, padding: '14px 20px',
+                    display: 'flex', alignItems: 'center', gap: 12,
                     cursor: selected || timeUp ? 'default' : 'pointer',
-                    transition: 'all 0.2s',
-                    width: '100%',
-                    textAlign: 'left',
-                    outline: 'none',
-                  }}
-                >
-                  <span style={{ fontSize: 12, fontWeight: 800, minWidth: 24, opacity: 0.7 }}>
-                    {LABELS[i]}
-                  </span>
+                    transition: 'all 0.2s', width: '100%', textAlign: 'left', outline: 'none' }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, minWidth: 24, opacity: 0.7 }}>{LABELS[i]}</span>
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
                     <TokenRenderer token={tok} sz={44} card />
                     {label && <span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span>}
@@ -1305,25 +1161,12 @@ export function QuizTokenQuestion({
               );
             })}
           </div>
-
           {(selected || timeUp) && onNext && (
-            <button
-              onClick={onNext}
-              style={{
-                marginTop: 18,
-                width: '100%',
-                padding: '13px',
-                borderRadius: 14,
-                border: 'none',
-                background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-                color: '#fff',
-                fontWeight: 900,
-                fontSize: 15,
-                cursor: 'pointer',
-              }}
-            >
-              Next →
-            </button>
+            <button onClick={onNext} style={{
+              marginTop: 18, width: '100%', padding: '13px', borderRadius: 14, border: 'none',
+              background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', color: '#fff',
+              fontWeight: 900, fontSize: 15, cursor: 'pointer',
+            }}>Next →</button>
           )}
         </div>
       </div>

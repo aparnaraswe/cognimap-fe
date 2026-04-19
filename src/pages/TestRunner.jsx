@@ -678,64 +678,65 @@ function MemoryRevealDisplay({ item, onRevealComplete }) {
   const perItemDuration = Math.max(2, Math.floor(revealDuration / Math.max(tokensToShow.length, 1)));
 
   useEffect(() => {
-    // Guard: prevent double-fire (React StrictMode) or re-fire for same item
-    if (revealStarted.current) return;
-    revealStarted.current = true;
+    let cancelled = false;
 
     // Phase 1: countdown 3, 2, 1
-    let step = 3;
     setPhase('ready');
     setCountdown(3);
     setCurrentTokenIdx(0);
     setRevealPct(100);
 
-    // Capture values at effect-creation time
     const tokens = tokensToShow;
     const perDur = perItemDuration;
 
-    cdRef.current = setInterval(() => {
-      step--;
-      if (step <= 0) {
-        clearInterval(cdRef.current);
-        cdRef.current = null;
-        setPhase('showing');
+    const sleep = (ms) => new Promise(r => { const t = setTimeout(r, ms); if (cancelled) clearTimeout(t); });
 
-        // Phase 2: show tokens one by one
-        let idx = 0;
-        const showNext = () => {
-          setCurrentTokenIdx(idx);
-          setRevealPct(100);
-          const endMs = Date.now() + perDur * 1000;
-          timerRef.current = setInterval(() => {
-            const remaining = endMs - Date.now();
-            if (remaining <= 0) {
-              clearInterval(timerRef.current);
-              timerRef.current = null;
-              idx++;
-              if (idx < tokens.length) {
-                showNext();
-              } else {
-                setRevealPct(0);
-                setPhase('hidden');
-                onCompleteRef.current();
-              }
-            } else {
-              setRevealPct((remaining / (perDur * 1000)) * 100);
-            }
-          }, 50);
-        };
-        showNext();
-      } else {
-        setCountdown(step);
+    (async () => {
+      // Countdown
+      for (let c = 3; c >= 1; c--) {
+        if (cancelled) return;
+        setCountdown(c);
+        await sleep(600);
       }
-    }, 600);
+      if (cancelled) return;
+
+      // Phase 2: show tokens one by one
+      setPhase('showing');
+      for (let idx = 0; idx < tokens.length; idx++) {
+        if (cancelled) return;
+        setCurrentTokenIdx(idx);
+        setRevealPct(100);
+        const startMs = Date.now();
+        const durMs = perDur * 1000;
+
+        // Animate progress bar
+        await new Promise((resolve) => {
+          const tick = () => {
+            if (cancelled) { resolve(); return; }
+            const elapsed = Date.now() - startMs;
+            if (elapsed >= durMs) {
+              setRevealPct(0);
+              resolve();
+            } else {
+              setRevealPct(((durMs - elapsed) / durMs) * 100);
+              timerRef.current = requestAnimationFrame(tick);
+            }
+          };
+          timerRef.current = requestAnimationFrame(tick);
+        });
+      }
+
+      if (cancelled) return;
+      // Phase 3: hidden
+      setRevealPct(0);
+      setPhase('hidden');
+      console.log('[MemoryReveal] calling onRevealComplete');
+      onCompleteRef.current();
+    })();
 
     return () => {
-      clearInterval(cdRef.current);
-      clearInterval(timerRef.current);
-      cdRef.current = null;
-      timerRef.current = null;
-      revealStarted.current = false;
+      cancelled = true;
+      if (timerRef.current) cancelAnimationFrame(timerRef.current);
     };
   }, [item.itemId]);
 
@@ -919,7 +920,7 @@ function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVis
           transition: 'border-color 0.18s, box-shadow 0.18s, opacity 0.18s',
           padding: 0,
           flex: '1 1 0%',
-          minHeight: 0,
+          minHeight: 80,
           overflow: 'hidden',
           borderRadius: 14,
           position: 'relative',
@@ -986,17 +987,40 @@ function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVis
         {isRatio && <RatioToken token={opt.value} sz={40} />}
         {isShape && !isImg && !isExcelImg && !isPos && !isRatio && <TokenRenderer token={opt.value} sz={40} />}
         {isGsLabel && <TokenRenderer token={opt.value} sz={40} />}
-        {displayText && (
-          <span style={{
-            fontSize: stretch ? (isLongText ? 14 : 17) : (isLongText ? 13 : 15),
-            fontWeight: 600,
-            lineHeight: 1.4,
-            color: '#1e293b',
-            wordBreak: 'break-word',
-          }}>
-            {displayText}
-          </span>
-        )}
+        {displayText && (() => {
+          const txt = String(displayText).trim();
+          const isShort = txt.length <= 12;
+          const isNumeric = /^[\d\s+\-×÷=.,/()%]+$/.test(txt);
+          if (stretch && isShort) {
+            // Short text (numbers, single words) — bold pill style
+            return (
+              <span style={{
+                fontSize: isNumeric ? 26 : 22,
+                fontWeight: 900,
+                fontFamily: isNumeric ? "'Fredoka One', ui-monospace, monospace" : 'inherit',
+                color: '#0f172a',
+                letterSpacing: isNumeric ? '1.5px' : '0.5px',
+                background: isPending ? 'rgba(99,102,241,0.10)' : 'rgba(30,41,59,0.05)',
+                padding: '6px 18px',
+                borderRadius: 12,
+                lineHeight: 1.3,
+              }}>
+                {txt}
+              </span>
+            );
+          }
+          return (
+            <span style={{
+              fontSize: stretch ? (isLongText ? 16 : 20) : (isLongText ? 15 : 18),
+              fontWeight: 800,
+              lineHeight: 1.4,
+              color: '#0f172a',
+              wordBreak: 'break-word',
+            }}>
+              {txt}
+            </span>
+          );
+        })()}
       </div>
     </button>
   );
@@ -1953,7 +1977,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                     <div style={{ width: '100%', height: '100%', position: 'relative',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                       {!gwmRevealDone && pracRevealItem && (
-                        <MemoryRevealDisplay item={pracRevealItem} onRevealComplete={() => setGwmRevealDone(true)} />
+                        <MemoryRevealDisplay item={pracRevealItem} onRevealComplete={() => { console.log('[GWM Practice] reveal complete, setting gwmRevealDone=true'); setGwmRevealDone(true); }} />
                       )}
                       {gwmRevealDone && (
                         <div style={{ position: 'absolute', inset: 0, background: 'rgba(139,92,246,0.04)',

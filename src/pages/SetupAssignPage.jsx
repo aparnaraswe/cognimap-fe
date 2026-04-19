@@ -297,10 +297,27 @@ export default function SetupAssignPage() {
                     style={{ background: 'var(--sage-pale)', border: '1px solid var(--sage)' }}
                   >
                     <CheckCircle2 size={16} className="mt-0.5 flex-shrink-0" style={{ color: 'var(--sage)' }} />
-                    <div className="text-sm font-medium" style={{ color: 'var(--sage)' }}>
-                      Uploaded: {uploadResult.inserted} new + {uploadResult.updated} updated items
-                      {uploadResult.skipped > 0 && (
-                        <span className="ml-2" style={{ color: 'var(--gold)' }}>· {uploadResult.skipped} skipped</span>
+                    <div>
+                      <div className="text-sm font-medium" style={{ color: 'var(--sage)' }}>
+                        Uploaded: {uploadResult.inserted} new + {uploadResult.updated} updated items
+                        {uploadResult.skipped > 0 && (
+                          <span className="ml-2" style={{ color: 'var(--gold)' }}>· {uploadResult.skipped} skipped</span>
+                        )}
+                      </div>
+                      {/* Practice items per domain */}
+                      {uploadResult.practiceByDomain && Object.keys(uploadResult.practiceByDomain).length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {Object.entries(uploadResult.practiceByDomain).map(([d, count]) => (
+                            <span key={d} className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                              style={{ background: '#dcfce7', color: '#16a34a', border: '1px solid #bbf7d0' }}>
+                              {(DOMAIN_LABELS[d] || d).toUpperCase()}: {count} practice
+                            </span>
+                          ))}
+                        </div>
+                      ) : (uploadResult.inserted > 0 || uploadResult.updated > 0) && (
+                        <div className="text-[11px] mt-1.5 font-semibold flex items-center gap-1" style={{ color: 'var(--gold)' }}>
+                          <AlertTriangle size={12} /> No practice items found — students will see default practice questions
+                        </div>
                       )}
                     </div>
                   </div>
