@@ -824,14 +824,29 @@ function MemoryRevealDisplay({ item, onRevealComplete }) {
           </div>
         )}
 
-        {/* Timer bar */}
-        <div style={{ width: '80%', height: 4, borderRadius: 99,
-          overflow: 'hidden', background: '#e9d5ff', flexShrink: 0 }}>
+        {/* Per-image timer: bar + remaining seconds */}
+        <div style={{ width: '80%', display: 'flex', alignItems: 'center', gap: 10,
+          flexShrink: 0 }}>
+          <div style={{ flex: 1, height: 10, borderRadius: 99,
+            overflow: 'hidden', background: '#e9d5ff',
+            boxShadow: 'inset 0 1px 2px rgba(88,28,135,0.15)' }}>
+            <div style={{
+              width: `${revealPct}%`, height: '100%', borderRadius: 99,
+              background: revealPct < 25
+                ? 'linear-gradient(90deg,#ef4444,#f87171)'
+                : 'linear-gradient(90deg,#8B5CF6,#a78bfa)',
+              transition: 'width 0.05s linear',
+            }} />
+          </div>
           <div style={{
-            width: `${revealPct}%`, height: '100%', borderRadius: 99,
-            background: revealPct < 25 ? '#ef4444' : '#8B5CF6',
-            transition: 'width 0.05s linear',
-          }} />
+            minWidth: 42, textAlign: 'right',
+            fontFamily: "'DM Sans', system-ui, sans-serif",
+            fontSize: 16, fontWeight: 800,
+            fontVariantNumeric: 'tabular-nums',
+            color: revealPct < 25 ? '#ef4444' : '#6d28d9',
+          }}>
+            {((revealPct / 100) * perItemDuration).toFixed(1)}s
+          </div>
         </div>
 
         {!isVisualTokens && (
