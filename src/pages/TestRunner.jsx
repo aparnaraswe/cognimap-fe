@@ -824,30 +824,14 @@ function MemoryRevealDisplay({ item, onRevealComplete }) {
           </div>
         )}
 
-        {/* Per-image timer: compact bar + remaining seconds (horizontal, low height) */}
-        <div style={{ width: '85%', display: 'flex', alignItems: 'center', gap: 8,
-          flexShrink: 0, height: 16 }}>
-          <div style={{ flex: 1, height: 6, borderRadius: 99,
-            overflow: 'hidden', background: '#e9d5ff',
-            boxShadow: 'inset 0 1px 2px rgba(88,28,135,0.15)' }}>
-            <div style={{
-              width: `${revealPct}%`, height: '100%', borderRadius: 99,
-              background: revealPct < 25
-                ? 'linear-gradient(90deg,#ef4444,#f87171)'
-                : 'linear-gradient(90deg,#8B5CF6,#a78bfa)',
-              transition: 'width 0.05s linear',
-            }} />
-          </div>
+        {/* Timer bar */}
+        <div style={{ width: '80%', height: 4, borderRadius: 99,
+          overflow: 'hidden', background: '#e9d5ff', flexShrink: 0 }}>
           <div style={{
-            minWidth: 34, textAlign: 'right',
-            fontFamily: "'DM Sans', system-ui, sans-serif",
-            fontSize: 12, fontWeight: 800,
-            fontVariantNumeric: 'tabular-nums',
-            color: revealPct < 25 ? '#ef4444' : '#6d28d9',
-            lineHeight: 1,
-          }}>
-            {((revealPct / 100) * perItemDuration).toFixed(1)}s
-          </div>
+            width: `${revealPct}%`, height: '100%', borderRadius: 99,
+            background: revealPct < 25 ? '#ef4444' : '#8B5CF6',
+            transition: 'width 0.05s linear',
+          }} />
         </div>
 
         {!isVisualTokens && (
@@ -1370,8 +1354,60 @@ const DOMAIN_PRACTICE_SVG = {
   ),
 };
 
-function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxItems, batteryInfo, onStart }) {
-  const [step, setStep] = useState('gateway'); // gateway | instructions | practice | feedback | ready
+// Walk an item's content and return every "/custom/..." URL it references via excel_img: tokens.
+function collectExcelImgUrls(item) {
+  const urls = [];
+  const visit = v => {
+    if (typeof v === 'string') {
+      if (v.startsWith('excel_img:')) urls.push(`/custom/${v.slice('excel_img:'.length)}`);
+    } else if (Array.isArray(v)) {
+      v.forEach(visit);
+    } else if (v && typeof v === 'object') {
+      Object.values(v).forEach(visit);
+    }
+  };
+  visit(item?.content);
+  return urls;
+}
+
+const ASSET_OK_CACHE = new Map(); // url → boolean
+// Fail-OPEN: only return false when we get a definitive 404/410 from the server.
+// Network errors, CORS, servers that reject HEAD, etc. → treat as usable so we don't
+// wrongly skip good items.
+async function assetExists(url) {
+  if (ASSET_OK_CACHE.has(url)) return ASSET_OK_CACHE.get(url);
+  try {
+    const res = await fetch(url, { method: 'HEAD' });
+    const definitelyMissing = res.status === 404 || res.status === 410;
+    const ok = !definitelyMissing;
+    ASSET_OK_CACHE.set(url, ok);
+    return ok;
+  } catch {
+    ASSET_OK_CACHE.set(url, true); // can't verify → assume ok
+    return true;
+  }
+}
+
+// Given a list of items, return the first one whose referenced assets are not confirmed 404s.
+async function pickFirstUsableItem(items) {
+  for (const it of items) {
+    const urls = collectExcelImgUrls(it);
+    if (!urls.length) return it;
+    const checks = await Promise.all(urls.map(assetExists));
+    if (checks.every(Boolean)) return it;
+    console.warn('[TestRunner] Skipping item with missing assets:',
+      it.item_code || it.id, urls.filter((_, i) => !checks[i]));
+  }
+  return null;
+}
+
+function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxItems, batteryInfo, isFirstSection, onStart }) {
+  const [step, setStep] = useState('gateway'); // gateway | instructions | onboarding | practice | feedback | ready
+  // Onboarding tour shows only:
+  //   (a) at the very start of the test / on resume (first DomainIntro of the mount), OR
+  //   (b) when entering GWM — GWM variant briefs students on the memorise-then-answer UX
+  // All other sections skip the tour and go instructions → practice directly.
+  const shouldShowOnboarding = isFirstSection || domain === 'gwm';
   const [selectedPracOpt, setSelectedPracOpt] = useState(null);
   const [practiceAnswered, setPracticeAnswered] = useState(false);
   // GWM practice: reuse the same MemoryRevealDisplay component as actual items
@@ -1379,16 +1415,26 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
 
   // ── Dynamic data from DB ──
   const [dbPracticeItem, setDbPracticeItem] = useState(null);   // item from /items/practice
+  const [practiceFetchDone, setPracticeFetchDone] = useState(false); // true once /items/practice resolved (success or failure)
   const [dbInstructions, setDbInstructions] = useState(null);   // per-domain instructions from /config/student-visible
 
   useEffect(() => {
-    // Fetch practice items for this domain (falls back to easiest regular items on backend)
+    let cancelled = false;
+    // Fetch practice items for this domain. Use the first item returned; if the backend
+    // returns none, the practice step will be auto-skipped (see effect below).
     api.get(`/items/practice?domain=${domain}`)
       .then(d => {
-        console.log(`[DomainIntro] Practice items for ${domain}:`, d.items?.length || 0, d.items?.[0]?.content ? 'has content' : 'no content');
-        if (d.items?.length) setDbPracticeItem(d.items[0]);
+        const list = d.items || [];
+        console.log(`[DomainIntro] Practice items for ${domain}:`, list.length, list[0]?.content ? 'has content' : 'no content');
+        if (cancelled) return;
+        if (list.length && list[0]?.content) setDbPracticeItem(list[0]);
+        else console.warn(`[DomainIntro] No DB practice item returned for ${domain} — practice step will be skipped.`);
+        setPracticeFetchDone(true);
       })
-      .catch(err => console.warn(`[DomainIntro] Failed to fetch practice items for ${domain}:`, err));
+      .catch(err => {
+        console.warn(`[DomainIntro] Failed to fetch practice items for ${domain}:`, err);
+        if (!cancelled) setPracticeFetchDone(true);
+      });
     // Fetch admin-configured domain instructions
     api.get('/config/student-visible')
       .then(d => {
@@ -1396,7 +1442,17 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
         if (all?.[domain]) setDbInstructions(all[domain]);
       })
       .catch(() => {});
+    return () => { cancelled = true; };
   }, [domain]);
+
+  // If the practice fetch resolves with no usable DB item, skip the practice step entirely —
+  // never render the static hardcoded question.
+  useEffect(() => {
+    if (step === 'practice' && practiceFetchDone && !dbPracticeItem) {
+      console.warn(`[DomainIntro] No DB practice item for ${domain} — skipping practice step.`);
+      setStep('ready');
+    }
+  }, [step, practiceFetchDone, dbPracticeItem, domain]);
 
   const meta = DOMAIN_META[domain] || { icon: '📝', label: domainLabel, color: '#78716C', desc: 'Answer each question carefully.' };
   const cfgStatic = DOMAIN_CFG[domain] || {
@@ -1636,7 +1692,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button className="cg-btn-primary" onClick={() => setStep('onboarding')}>Try Practice Questions</button>
+              <button className="cg-btn-primary" onClick={() => setStep(shouldShowOnboarding ? 'onboarding' : 'practice')}>Try Practice Questions</button>
               <button className="cg-btn-secondary" onClick={() => setStep('gateway')}>Back</button>
             </div>
           </div>
@@ -1897,6 +1953,21 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
 
   // ══ S4 PRACTICE ══
   if (step === 'practice') {
+    // Never show the static hardcoded practice. Only DB items.
+    // While fetching → show a minimal loading frame; after fetch, if no item, the effect above auto-advances to 'ready'.
+    if (!practiceFetchDone) {
+      return (
+        <Shell>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#78716C', fontSize: 14 }}>
+            Loading practice…
+          </div>
+        </Shell>
+      );
+    }
+    if (!dbPracticeItem) {
+      // useEffect will have called setStep('ready'); render nothing this tick to avoid flashing the static fallback.
+      return null;
+    }
     // Build sequence from DB item for visual rendering (same parsing as cat-engine formatItemForClient)
     const dbSeq = (() => {
       if (!dbC) return null;
@@ -1974,12 +2045,41 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                     </div>
                   </div>
 
-                  {/* Prompt — shown only after reveal */}
-                  {gwmRevealDone && (
-                    <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", color: '#1A1A2E',
-                      fontSize: 'clamp(13px,1.4vw,17px)', flexShrink: 0, marginBottom: 8, lineHeight: 1.45,
-                      animation: 'popIn 0.3s ease-out' }}>
-                      {pracQ}
+                  {/* Prompt — visible throughout (including during memorise phase) so
+                      the student can read the question while images are shown one by one.
+                      Styling matches the main test prompt for consistency. */}
+                  {pracQ && (
+                    <div style={{
+                      flexShrink: 0, marginBottom: 12,
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    }}>
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        background: color, color: '#fff',
+                        padding: '3px 10px 3px 8px', borderRadius: 6,
+                        fontSize: 10, fontWeight: 800, letterSpacing: '1px',
+                        marginBottom: 8,
+                      }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        QUESTION
+                      </div>
+                      <div style={{
+                        width: '100%',
+                        padding: '16px 24px',
+                        background: '#fff',
+                        border: `2px solid ${color}33`,
+                        borderRadius: 12,
+                        fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
+                        color: '#1A1A2E',
+                        fontSize: 'clamp(18px, 2vw, 24px)',
+                        fontWeight: 700,
+                        lineHeight: 1.4,
+                        textAlign: 'center',
+                        letterSpacing: '-0.01em',
+                        boxShadow: `0 2px 10px ${color}15`,
+                      }}>
+                        {pracQ}
+                      </div>
                     </div>
                   )}
 
@@ -2151,28 +2251,35 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                   </div>
                 </div>
 
-                {/* Prompt — clear "QUESTION" label + readable prompt text */}
-                <div style={{ flexShrink: 0, marginBottom: 10 }}>
+                {/* Prompt — centered, bold, uniform across sections & item types */}
+                <div style={{
+                  flexShrink: 0, marginBottom: 12,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                }}>
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     background: color, color: '#fff',
                     padding: '3px 10px 3px 8px', borderRadius: 6,
                     fontSize: 10, fontWeight: 800, letterSpacing: '1px',
-                    marginBottom: 6,
+                    marginBottom: 8,
                   }}>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     QUESTION
                   </div>
                   <div style={{
-                    padding: '10px 14px',
+                    width: '100%',
+                    padding: '16px 24px',
                     background: '#fff',
-                    border: `1.5px solid ${color}33`,
-                    borderLeft: `4px solid ${color}`,
-                    borderRadius: 10,
-                    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+                    border: `2px solid ${color}33`,
+                    borderRadius: 12,
+                    fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
                     color: '#1A1A2E',
-                    fontSize: 'clamp(15px, 1.55vw, 18px)',
-                    fontWeight: 600, lineHeight: 1.45,
+                    fontSize: 'clamp(18px, 2vw, 24px)',
+                    fontWeight: 700,
+                    lineHeight: 1.4,
+                    textAlign: 'center',
+                    letterSpacing: '-0.01em',
+                    boxShadow: `0 2px 10px ${color}15`,
                   }}>
                     {pracQ}
                   </div>
@@ -2683,22 +2790,22 @@ const TOUR_STEPS = [
     pad: 8, tip: { side: 'left' } },
 ];
 
-// ── GWM (working memory) tour — show → hide → options flow ──
+// ── GWM (working memory) tour — question on top → timer → images one by one → options ──
 const TOUR_STEPS_GWM = [
-  { zone: 'zone-gwm-timer',    color: '#f59e0b', emoji: '1️⃣', title: 'Timer Starts',
-    body: 'A countdown timer begins. Pay close attention — items will appear on screen one by one.',
+  { zone: 'zone-gwm-question', color: '#ef4444', emoji: '1️⃣', title: 'Read the Question First',
+    body: "The question sits at the top of the screen and stays visible the whole time. Read it before anything else — it tells you what to remember (the order, a specific item, what came before or after).",
+    pad: 8, tip: { side: 'right' } },
+  { zone: 'zone-gwm-timer',    color: '#f59e0b', emoji: '2️⃣', title: 'Timer Begins',
+    body: 'Once you know the question, the countdown starts. Each item gets its own short timer — watch it carefully so you know when the next one is coming.',
     pad: 6, tip: { side: 'bottom-left' } },
-  { zone: 'zone-gwm-stimulus', color: '#06b6d4', emoji: '2️⃣', title: 'Items Appear One by One',
-    body: 'Numbers, letters, or pictures will flash on screen one at a time. Watch carefully and try to remember each one in order.',
+  { zone: 'zone-gwm-stimulus', color: '#06b6d4', emoji: '3️⃣', title: 'Items Appear One by One',
+    body: 'Numbers, letters, or pictures flash on screen one at a time in the centre box. The question stays above to remind you what to focus on. Try to hold each item in your head in order.',
     pad: 8, tip: { side: 'right' } },
-  { zone: 'zone-gwm-stimulus', color: '#7c6fcd', emoji: '3️⃣', title: 'Everything Disappears',
-    body: 'Once all items have been shown, the screen goes blank. You now need to recall what you saw. The question and options will appear.',
-    pad: 8, tip: { side: 'right' } },
-  { zone: 'zone-gwm-question', color: '#ef4444', emoji: '4️⃣', title: 'Read the Question',
-    body: 'A question appears asking about what you just memorised — the order, which item was shown, or what was missing.',
+  { zone: 'zone-gwm-stimulus', color: '#7c6fcd', emoji: '4️⃣', title: 'Items Hide',
+    body: "After the last item, the centre box goes blank — but the question is still there at the top. Now you answer from memory.",
     pad: 8, tip: { side: 'right' } },
   { zone: 'zone-gwm-options',  color: '#10b981', emoji: '5️⃣', title: 'Answer from Memory',
-    body: 'Pick the answer that matches what you remember. Click once to choose, double-click to submit instantly.',
+    body: 'The answer options appear on the right. Pick the one that matches what you remember. Click once to choose, double-click to submit instantly.',
     pad: 8, tip: { side: 'left' } },
 ];
 
@@ -2908,6 +3015,17 @@ function OnboardingTour({ onDone, variant = 'standard', domainMeta, domainCfg, b
         {/* body */}
         <div style={{ padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 14, minHeight: 340 }}>
 
+          {/* Question — always on top, visible throughout the whole flow */}
+          <div id="zone-gwm-question" style={{
+            background: 'linear-gradient(135deg,#7C6FCD,#9B8EE0 55%,#B8ACEE)',
+            color: '#fff',
+            borderRadius: 12, padding: '14px 18px',
+            fontSize: 15, fontWeight: 700,
+            textAlign: 'center',
+          }}>
+            Which numbers did you see, in the correct order?
+          </div>
+
           {/* Stimulus zone — items appear one by one during 'show', blank during 'hidden'/'question' */}
           <div id="zone-gwm-stimulus" style={{
             background: gwmStage === 'show' ? '#f9f8fe' : '#f3f2f8',
@@ -2956,19 +3074,8 @@ function OnboardingTour({ onDone, variant = 'standard', domainMeta, domainCfg, b
             </div>
           )}
 
-          {/* Question — hidden during show, appears after hidden */}
-          <div id="zone-gwm-question" style={{
-            background: gwmStage === 'show' ? '#f3f2f8' : 'linear-gradient(135deg,#7C6FCD,#9B8EE0 55%,#B8ACEE)',
-            color: gwmStage === 'show' ? '#d4d0e4' : '#fff',
-            borderRadius: 12, padding: '14px 18px',
-            fontSize: 15, fontWeight: 700,
-            transition: 'all .4s',
-            opacity: gwmStage === 'show' ? 0.4 : 1,
-          }}>
-            {gwmStage === 'show'
-              ? '⏳ Question appears after items are hidden…'
-              : 'Which numbers did you see, in the correct order?'}
-          </div>
+          {/* (Question zone moved to top of body — above the stimulus — to match real
+              test layout where the prompt stays visible throughout the memorise phase.) */}
 
           {/* Options — faded during show, active during hidden/question */}
           <div id="zone-gwm-options" style={{
@@ -3139,7 +3246,16 @@ export default function TestRunner() {
     if (!newItem) return;
     if (prog && prog.testType !== 'personality' && prog.testType !== 'interest' &&
         (lastDomainRef.current === null || prog.domain !== lastDomainRef.current)) {
-      setShowDomainIntro({ domain: prog.domain, label: prog.domainLabel, item: newItem, progress: prog });
+      // isFirstSection = the very first DomainIntro shown in this mount.
+      // Covers both fresh-start and resume cases: on resume the component
+      // mounts fresh, so lastDomainRef.current is null → whichever section
+      // loads first gets treated as the start of the test.
+      const isFirstSection = lastDomainRef.current === null;
+      setShowDomainIntro({
+        domain: prog.domain, label: prog.domainLabel,
+        item: newItem, progress: prog,
+        isFirstSection,
+      });
       lastDomainRef.current = prog.domain;
       return;
     }
@@ -3424,6 +3540,7 @@ export default function TestRunner() {
       domainsTotal={showDomainIntro.progress?.domainsTotal || 5}
       maxItems={showDomainIntro.progress?.maxItems}
       batteryInfo={batteryInfo}
+      isFirstSection={showDomainIntro.isFirstSection}
       onStart={startDomainSection}
     />
   );
@@ -3698,36 +3815,41 @@ export default function TestRunner() {
                 </div>
               </div>
 
-              {/* Prompt — clear "QUESTION" label + readable prompt text */}
-              {(renderMode !== 'memory_reveal' || !memoryOptionsLocked) && item.prompt && (
+              {/* Prompt — centered, bold, uniform across sections & item types.
+                  For GWM (memory_reveal) it stays visible throughout so the student
+                  reads the question while the images are shown one by one. */}
+              {item.prompt && (
                 <div style={{
-                  flexShrink: 0, marginBottom: 10,
+                  flexShrink: 0, marginBottom: 12,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
                   ...(renderMode === 'memory_reveal' ? { animation: 'popIn 0.3s ease-out' } : {}),
                 }}>
-                  {/* Clear label so kids know this is the question to read */}
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     background: cgColor, color: '#fff',
                     padding: '3px 10px 3px 8px', borderRadius: 6,
                     fontSize: 10, fontWeight: 800, letterSpacing: '1px',
-                    marginBottom: 6,
+                    marginBottom: 8,
                   }}>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     QUESTION
                   </div>
                   <div style={{
-                    padding: '10px 14px',
+                    width: '100%',
+                    padding: '16px 24px',
                     background: '#fff',
-                    border: `1.5px solid ${cgColor}33`,
-                    borderLeft: `4px solid ${cgColor}`,
-                    borderRadius: 10,
-                    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+                    border: `2px solid ${cgColor}33`,
+                    borderRadius: 12,
+                    fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
                     color: '#1A1A2E',
-                    fontSize: 'clamp(15px, 1.55vw, 18px)',
-                    fontWeight: 600,
-                    lineHeight: 1.45,
+                    fontSize: 'clamp(18px, 2vw, 24px)',
+                    fontWeight: 700,
+                    lineHeight: 1.4,
+                    textAlign: 'center',
+                    letterSpacing: '-0.01em',
+                    boxShadow: `0 2px 10px ${cgColor}15`,
                   }}
-                  dangerouslySetInnerHTML={{ __html: (item.prompt || '').replace(/<hl>/g, `<span style="display:inline-block;background:${cgColor};color:white;padding:0 8px 1px;border-radius:6px;font-size:0.95em;font-weight:700">`).replace(/<\/hl>/g, '</span>') }} />
+                  dangerouslySetInnerHTML={{ __html: (item.prompt || '').replace(/<hl>/g, `<span style="display:inline-block;background:${cgColor};color:white;padding:0 8px 1px;border-radius:6px;font-size:0.95em;font-weight:800">`).replace(/<\/hl>/g, '</span>') }} />
                 </div>
               )}
 

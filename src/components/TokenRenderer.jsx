@@ -855,6 +855,185 @@ function optimizeSvgForOption(svgText) {
   return serializeSvg(svg);
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// PATCH #3 — ExcelImgToken smart SVG normalization (non-destructive)
+// ═══════════════════════════════════════════════════════════════════
+// For small vector SVGs we fetch the text, compute the content bbox,
+// rewrite the root viewBox tight to that bbox (+ 10% padding), and
+// inject inline. This fixes the "image looks tiny inside option"
+// problem caused by SVGs whose artwork occupies only 10-30% of their
+// declared viewBox — WITHOUT mutating any content (no circle scaling,
+// no element removal). Composite stimuli with multiple shapes retain
+// their original relative sizes and positions.
+//
+// Large files (>300KB — likely raster-embedded base64 PNGs) are always
+// rendered via <img> since inline injection freezes the browser.
+// Fetch failures and parse errors fall back cleanly to <img>.
+// Results are cached by URL so repeat renders are instant.
+// ═══════════════════════════════════════════════════════════════════
+const SVG_NORMALIZE_CACHE = new Map(); // url → 'html' | 'skip' | 'pending:<Promise>'
+const SVG_INLINE_MAX_BYTES = 300 * 1024; // 300 KB
+
+function tightenSvgViewBox(svgText) {
+  const svg = parseSvg(svgText);
+  if (!svg) return null;
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const extend = (x, y) => {
+    if (isFinite(x) && isFinite(y)) {
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+  };
+
+  svg.querySelectorAll('circle').forEach(el => {
+    const cx = parseFloat(el.getAttribute('cx')) || 0;
+    const cy = parseFloat(el.getAttribute('cy')) || 0;
+    const r  = parseFloat(el.getAttribute('r'))  || 0;
+    if (r < 1) return;
+    extend(cx - r, cy - r); extend(cx + r, cy + r);
+  });
+  svg.querySelectorAll('ellipse').forEach(el => {
+    const cx = parseFloat(el.getAttribute('cx')) || 0;
+    const cy = parseFloat(el.getAttribute('cy')) || 0;
+    const rx = parseFloat(el.getAttribute('rx')) || 0;
+    const ry = parseFloat(el.getAttribute('ry')) || 0;
+    extend(cx - rx, cy - ry); extend(cx + rx, cy + ry);
+  });
+  // Read the root viewBox early so we can detect background-filler rects
+  const rootVbEarly = (svg.getAttribute('viewBox') || '').split(/\s+/).map(Number);
+  const rootVbW = rootVbEarly[2] || 0;
+  const rootVbH = rootVbEarly[3] || 0;
+
+  svg.querySelectorAll('rect').forEach(el => {
+    const x = parseFloat(el.getAttribute('x')) || 0;
+    const y = parseFloat(el.getAttribute('y')) || 0;
+    const w = parseFloat(el.getAttribute('width')) || 0;
+    const h = parseFloat(el.getAttribute('height')) || 0;
+    if (w < 2 && h < 2) return;
+    // Background filler rect: positioned at origin AND covers >=90% of the root viewBox.
+    // Applies regardless of fill color — SVGs from different domains use white, off-
+    // white, light blue, etc. as the backing card. Exclude from bbox so content drives
+    // tightening.
+    if (rootVbW > 0 && rootVbH > 0) {
+      const atOrigin = x <= 1 && y <= 1;
+      const coversVb = w >= rootVbW * 0.9 && h >= rootVbH * 0.9;
+      if (atOrigin && coversVb) return;
+    }
+    extend(x, y); extend(x + w, y + h);
+  });
+  svg.querySelectorAll('polygon, polyline').forEach(el => {
+    const pts = (el.getAttribute('points') || '').trim().split(/[\s,]+/).map(Number);
+    for (let i = 0; i < pts.length - 1; i += 2) {
+      if (!isNaN(pts[i]) && !isNaN(pts[i+1])) extend(pts[i], pts[i+1]);
+    }
+  });
+  svg.querySelectorAll('line').forEach(el => {
+    extend(parseFloat(el.getAttribute('x1')) || 0, parseFloat(el.getAttribute('y1')) || 0);
+    extend(parseFloat(el.getAttribute('x2')) || 0, parseFloat(el.getAttribute('y2')) || 0);
+  });
+  svg.querySelectorAll('path').forEach(el => {
+    const d = el.getAttribute('d') || '';
+    let curX = 0, curY = 0;
+    const cmdRe = /([MLHVCSQTAZmlhvcsqtaz])\s*([-\d.,\s]*)/g;
+    let m;
+    while ((m = cmdRe.exec(d)) !== null) {
+      const cmd = m[1];
+      const nums = (m[2] || '').match(/-?[\d.]+/g)?.map(Number) || [];
+      const isRel = cmd === cmd.toLowerCase();
+      switch (cmd.toUpperCase()) {
+        case 'M': case 'L': case 'T':
+          for (let i = 0; i < nums.length - 1; i += 2) {
+            curX = isRel ? curX + nums[i] : nums[i];
+            curY = isRel ? curY + nums[i+1] : nums[i+1];
+            extend(curX, curY);
+          } break;
+        case 'H': for (const n of nums) { curX = isRel ? curX + n : n; extend(curX, curY); } break;
+        case 'V': for (const n of nums) { curY = isRel ? curY + n : n; extend(curX, curY); } break;
+        case 'C':
+          for (let i = 0; i < nums.length - 5; i += 6) {
+            curX = isRel ? curX + nums[i+4] : nums[i+4];
+            curY = isRel ? curY + nums[i+5] : nums[i+5];
+            extend(curX, curY);
+          } break;
+        case 'S': case 'Q':
+          for (let i = 0; i < nums.length - 3; i += 4) {
+            curX = isRel ? curX + nums[i+2] : nums[i+2];
+            curY = isRel ? curY + nums[i+3] : nums[i+3];
+            extend(curX, curY);
+          } break;
+        case 'A':
+          for (let i = 0; i < nums.length - 6; i += 7) {
+            curX = isRel ? curX + nums[i+5] : nums[i+5];
+            curY = isRel ? curY + nums[i+6] : nums[i+6];
+            extend(curX, curY);
+          } break;
+      }
+    }
+  });
+
+  if (minX === Infinity) return null;
+  const contentW = maxX - minX;
+  const contentH = maxY - minY;
+  if (contentW <= 0 || contentH <= 0) return null;
+
+  // Sanity: bbox must be inside the current viewBox — otherwise our parser missed
+  // content (e.g. via <use>, <g transform>) and we'd clip the image. Fall back.
+  const vbAttr = svg.getAttribute('viewBox');
+  let vbX = 0, vbY = 0, vbW = contentW, vbH = contentH;
+  if (vbAttr) {
+    [vbX, vbY, vbW, vbH] = vbAttr.split(/\s+/).map(Number);
+    if (minX < vbX - 1 || minY < vbY - 1 || maxX > vbX + vbW + 1 || maxY > vbY + vbH + 1) return null;
+  }
+
+  // UNIFORM SIZING: every SVG gets the same content-to-viewBox ratio, regardless of
+  // its original fill. This is what makes options look the same size across domains.
+  // TARGET_FILL = 0.85 means content fills 85% of the new viewBox (7.5% padding each
+  // side). When rendered in an option cell via object-fit:contain, content ends up at
+  // ~85% of the cell — a generous, uniform size with enough margin to avoid cropping
+  // from minor bbox imprecision.
+  const TARGET_FILL = 0.85;
+
+  const newVbW = contentW / TARGET_FILL;
+  const newVbH = contentH / TARGET_FILL;
+  const xOffset = (newVbW - contentW) / 2;
+  const yOffset = (newVbH - contentH) / 2;
+  svg.setAttribute('viewBox',
+    `${(minX - xOffset).toFixed(1)} ${(minY - yOffset).toFixed(1)} ${newVbW.toFixed(1)} ${newVbH.toFixed(1)}`);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+  return serializeSvg(svg);
+}
+
+async function fetchNormalizedSvg(src) {
+  const cached = SVG_NORMALIZE_CACHE.get(src);
+  if (cached && typeof cached === 'string') return cached;
+  if (cached && cached.pending) return cached.pending;
+
+  const pending = (async () => {
+    try {
+      const res = await fetch(src);
+      if (!res.ok) return null;
+      const clen = parseInt(res.headers.get('content-length') || '0', 10);
+      if (clen && clen > SVG_INLINE_MAX_BYTES) { SVG_NORMALIZE_CACHE.set(src, 'skip'); return null; }
+      const text = await res.text();
+      if (text.length > SVG_INLINE_MAX_BYTES) { SVG_NORMALIZE_CACHE.set(src, 'skip'); return null; }
+      if (text.includes('<image ') || text.includes('<use ') || text.includes('<symbol ')) {
+        SVG_NORMALIZE_CACHE.set(src, 'skip'); return null;
+      }
+      const html = tightenSvgViewBox(text);
+      if (!html) { SVG_NORMALIZE_CACHE.set(src, 'skip'); return null; }
+      SVG_NORMALIZE_CACHE.set(src, html);
+      return html;
+    } catch { SVG_NORMALIZE_CACHE.set(src, 'skip'); return null; }
+  })();
+
+  SVG_NORMALIZE_CACHE.set(src, { pending });
+  return pending;
+}
+
 export function ExcelImgToken({ token, sz=72, card=false }) {
   if (!token || !token.startsWith('excel_img:')) return null;
 
@@ -862,13 +1041,37 @@ export function ExcelImgToken({ token, sz=72, card=false }) {
   const src = `${CUSTOM_IMAGE_BASE}${filename}`;
   const isSvg = filename.toLowerCase().endsWith('.svg');
 
-  // Detect Gf (Pattern Reasoning) from filename
-  const isGf = /\bGf[_\/]/i.test(filename);
+  const initial = isSvg ? SVG_NORMALIZE_CACHE.get(src) : null;
+  const [inlineHtml, setInlineHtml] = useState(
+    typeof initial === 'string' && initial !== 'skip' ? initial : null
+  );
 
-  // ALL excel_img: files use <img> tag directly — never fetch + inline.
-  // Uploaded SVGs can be huge (10MB+ with embedded base64 PNGs) and freeze
-  // the browser if parsed/injected via dangerouslySetInnerHTML.
-  // The browser's native <img> handles any file size efficiently.
+  useEffect(() => {
+    if (!isSvg) return;
+    const cached = SVG_NORMALIZE_CACHE.get(src);
+    if (typeof cached === 'string' && cached !== 'skip') { setInlineHtml(cached); return; }
+    if (cached === 'skip') return;
+    let cancelled = false;
+    fetchNormalizedSvg(src).then(html => { if (!cancelled && html) setInlineHtml(html); });
+    return () => { cancelled = true; };
+  }, [src, isSvg]);
+
+  const wrapStyle = {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    maxWidth: card ? '100%' : 200,
+    maxHeight: card ? '100%' : 200,
+  };
+
+  if (inlineHtml) {
+    return <div style={wrapStyle} dangerouslySetInnerHTML={{ __html: inlineHtml }} />;
+  }
+
+  // Loading / non-SVG / large SVG / normalization failed → <img> fallback
   return (
     <img
       src={src}
