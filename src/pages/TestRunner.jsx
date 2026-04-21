@@ -824,10 +824,10 @@ function MemoryRevealDisplay({ item, onRevealComplete }) {
           </div>
         )}
 
-        {/* Per-image timer: bar + remaining seconds */}
-        <div style={{ width: '80%', display: 'flex', alignItems: 'center', gap: 10,
-          flexShrink: 0 }}>
-          <div style={{ flex: 1, height: 10, borderRadius: 99,
+        {/* Per-image timer: compact bar + remaining seconds (horizontal, low height) */}
+        <div style={{ width: '85%', display: 'flex', alignItems: 'center', gap: 8,
+          flexShrink: 0, height: 16 }}>
+          <div style={{ flex: 1, height: 6, borderRadius: 99,
             overflow: 'hidden', background: '#e9d5ff',
             boxShadow: 'inset 0 1px 2px rgba(88,28,135,0.15)' }}>
             <div style={{
@@ -839,11 +839,12 @@ function MemoryRevealDisplay({ item, onRevealComplete }) {
             }} />
           </div>
           <div style={{
-            minWidth: 42, textAlign: 'right',
+            minWidth: 34, textAlign: 'right',
             fontFamily: "'DM Sans', system-ui, sans-serif",
-            fontSize: 16, fontWeight: 800,
+            fontSize: 12, fontWeight: 800,
             fontVariantNumeric: 'tabular-nums',
             color: revealPct < 25 ? '#ef4444' : '#6d28d9',
+            lineHeight: 1,
           }}>
             {((revealPct / 100) * perItemDuration).toFixed(1)}s
           </div>
@@ -948,7 +949,7 @@ function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVis
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: 6,
         }}>
-          <TokenRenderer token={opt.value} sz={200} />
+          <TokenRenderer token={opt.value} sz={400} card />
         </div>
         {/* Letter badge — absolute overlay, top-left corner */}
         <div style={{
@@ -1943,7 +1944,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
             .opt-thumb { display:flex!important; align-items:center!important; justify-content:center!important; overflow:hidden!important; border-radius:11px!important; }
             .opt-thumb > div { width:100%!important; height:100%!important; display:flex!important; align-items:center!important; justify-content:center!important; }
             .opt-thumb svg { display:block!important; width:100%!important; height:100%!important; }
-            .opt-thumb img { display:block!important; width:100%!important; height:100%!important; object-fit:contain!important; }
+            .opt-thumb img { display:block!important; width:100%!important; height:100%!important; max-width:none!important; max-height:none!important; object-fit:contain!important; }
           `}</style>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: '8px 12px 12px' }}>
             <div style={{
@@ -2116,7 +2117,7 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
           .opt-thumb { display:flex!important; align-items:center!important; justify-content:center!important; overflow:hidden!important; border-radius:11px!important; }
           .opt-thumb > div { width:100%!important; height:100%!important; display:flex!important; align-items:center!important; justify-content:center!important; }
           .opt-thumb svg { display:block!important; width:100%!important; height:100%!important; }
-          .opt-thumb img { display:block!important; width:100%!important; height:100%!important; object-fit:contain!important; }
+          .opt-thumb img { display:block!important; width:100%!important; height:100%!important; max-width:none!important; max-height:none!important; object-fit:contain!important; }
           .stim-inner { overflow:hidden; }
           .stim-inner > div { width:100%!important; height:100%!important; display:flex!important; align-items:center!important; justify-content:center!important; }
           .stim-inner svg { display:block!important; max-width:100%!important; max-height:100%!important; width:auto!important; height:auto!important; }
@@ -3564,7 +3565,7 @@ export default function TestRunner() {
         .opt-thumb { display:flex!important; align-items:center!important; justify-content:center!important; overflow:hidden!important; border-radius:11px!important; }
         .opt-thumb > div { width:100%!important; height:100%!important; display:flex!important; align-items:center!important; justify-content:center!important; }
         .opt-thumb svg { display:block!important; width:100%!important; height:100%!important; }
-        .opt-thumb img { display:block!important; width:100%!important; height:100%!important; object-fit:contain!important; }
+        .opt-thumb img { display:block!important; width:100%!important; height:100%!important; max-width:none!important; max-height:none!important; object-fit:contain!important; }
         /* ── Stimulus white card: SVG/img fills the card fully ── */
         .stim-inner { overflow:hidden; }
         .stim-inner > div { margin:0!important; }
