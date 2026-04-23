@@ -590,6 +590,25 @@ export default function UsersPage() {
     } catch (err) { alert(err.message); }
   };
 
+  const [resendingId, setResendingId] = useState(null);
+  const resendCredentials = async (u) => {
+    if (!u.email) { alert('User has no email on file'); return; }
+    if (!confirm(`Generate a new password for ${u.first_name || u.email} and email it to ${u.email}?`)) return;
+    setResendingId(u.id);
+    try {
+      const res = await api.post(`/auth/users/${u.id}/resend-credentials`, {});
+      if (res?.skipped) {
+        alert(`Password was reset, but no email provider is configured — check server logs for the new credentials.`);
+      } else {
+        alert(`New credentials sent to ${res?.to || u.email}.`);
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to resend credentials');
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   // Counts per role for filter chips
   const roleCounts = ROLES.reduce((acc, r) => {
     acc[r.value] = users.filter(u => u.role === r.value).length;
@@ -753,6 +772,14 @@ export default function UsersPage() {
                             title="Edit"
                           >
                             <Pencil size={13} />
+                          </button>
+                          <button
+                            onClick={() => resendCredentials(u)}
+                            disabled={resendingId === u.id}
+                            className="btn-ghost !p-2"
+                            title="Resend credentials"
+                          >
+                            <Mail size={13} style={{ color: resendingId === u.id ? 'var(--slate-light)' : 'var(--terracotta)' }} />
                           </button>
                           <button
                             onClick={() => toggleActive(u)}
