@@ -868,7 +868,7 @@ function MemoryRevealDisplay({ item, onRevealComplete }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // OPTION BUTTON — clean white theme (supports text AND visual)
 // ═══════════════════════════════════════════════════════════════════════════════
-function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVisual, stretchText }) {
+function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVisual, stretchText, preserveSize }) {
   // Strip obj: prefix — it's an internal GWM qualifier, never shown to the user
   const val = String(opt.value || '').replace(/^obj:/, '');
   const isImg = val.startsWith('img_');
@@ -933,7 +933,7 @@ function OptionBtn({ opt, letter, onClick, onDoubleClick, state, disabled, isVis
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: 6,
         }}>
-          <TokenRenderer token={opt.value} sz={400} card />
+          <TokenRenderer token={opt.value} sz={400} card preserveSize={preserveSize} />
         </div>
         {/* Letter badge — absolute overlay, top-left corner */}
         <div style={{
@@ -2149,7 +2149,8 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                           <OptionBtn key={si} opt={opt} letter={letters[si]}
                             onClick={() => handlePickPrac(si)} state={state}
                             disabled={practiceAnswered} isVisual={pracIsVisual}
-                            stretchText />
+                            stretchText
+                            preserveSize={domain === 'gf'} />
                         );
                       })}
                     </div>
@@ -2394,7 +2395,8 @@ function DomainIntro({ domain, domainLabel, domainsCompleted, domainsTotal, maxI
                       <OptionBtn key={si} opt={opt} letter={letters[si]}
                         onClick={() => handlePickPrac(si)} state={state}
                         disabled={practiceAnswered} isVisual={pracIsVisual}
-                        stretchText />
+                        stretchText
+                        preserveSize={domain === 'gf'} />
                     );
                   })}
                 </div>
@@ -3913,7 +3915,8 @@ export default function TestRunner() {
                       onDoubleClick={() => chooseAndSubmit(si)}
                       state={state}
                       disabled={answered || memoryOptionsLocked} isVisual={isVisual}
-                      stretchText />
+                      stretchText
+                      preserveSize={item?.domain === 'gf'} />
                   );
                 })}
               </div>

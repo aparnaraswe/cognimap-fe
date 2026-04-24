@@ -1034,27 +1034,30 @@ async function fetchNormalizedSvg(src) {
   return pending;
 }
 
-export function ExcelImgToken({ token, sz=72, card=false }) {
+export function ExcelImgToken({ token, sz=72, card=false, preserveSize=false }) {
   if (!token || !token.startsWith('excel_img:')) return null;
 
   const filename = token.slice('excel_img:'.length);
   const src = `${CUSTOM_IMAGE_BASE}${filename}`;
   const isSvg = filename.toLowerCase().endsWith('.svg');
 
-  const initial = isSvg ? SVG_NORMALIZE_CACHE.get(src) : null;
+  // preserveSize: keep the SVG's native viewBox so relative sizes across a set
+  // of options are retained (used by Gf size-analogy items). Skip the tightening
+  // pass, which would otherwise rewrite every SVG to fill ~85% of its cell.
+  const initial = isSvg && !preserveSize ? SVG_NORMALIZE_CACHE.get(src) : null;
   const [inlineHtml, setInlineHtml] = useState(
     typeof initial === 'string' && initial !== 'skip' ? initial : null
   );
 
   useEffect(() => {
-    if (!isSvg) return;
+    if (!isSvg || preserveSize) return;
     const cached = SVG_NORMALIZE_CACHE.get(src);
     if (typeof cached === 'string' && cached !== 'skip') { setInlineHtml(cached); return; }
     if (cached === 'skip') return;
     let cancelled = false;
     fetchNormalizedSvg(src).then(html => { if (!cancelled && html) setInlineHtml(html); });
     return () => { cancelled = true; };
-  }, [src, isSvg]);
+  }, [src, isSvg, preserveSize]);
 
   const wrapStyle = {
     width: '100%',
@@ -1242,7 +1245,7 @@ function SpriteOrShapeToken({ token, sz, textFallback=false }) {
 // ═══════════════════════════════════════════════════════════════════
 // card=true → stimulus context; card=false → option context.
 // Slot above (StimulusSlot / OptionSlot) owns chrome and dimensions.
-export default function TokenRenderer({ token, sz=48, card=false }) {
+export default function TokenRenderer({ token, sz=48, card=false, preserveSize=false }) {
   useEffect(()=>{ loadCustomShapes(); loadSpriteManifest(); },[]);
   if (!token||token==='') return null;
 
@@ -1256,11 +1259,11 @@ export default function TokenRenderer({ token, sz=48, card=false }) {
     </div>
   );
 
-  if (typeof token==='string'&&token.startsWith('obj:')) return <TokenRenderer token={token.slice(4)} sz={sz} card={card} />;
+  if (typeof token==='string'&&token.startsWith('obj:')) return <TokenRenderer token={token.slice(4)} sz={sz} card={card} preserveSize={preserveSize} />;
 
   if (typeof token==='string'&&token.startsWith('pos_')) return <PosToken token={token} sz={sz} />;
   if (typeof token==='string'&&token.startsWith('img_')) return <ImgToken token={token} sz={sz} />;
-  if (typeof token==='string'&&token.startsWith('excel_img:')) return <ExcelImgToken token={token} sz={sz} card={card} />;
+  if (typeof token==='string'&&token.startsWith('excel_img:')) return <ExcelImgToken token={token} sz={sz} card={card} preserveSize={preserveSize} />;
   if (typeof token==='string'&&token.startsWith('ratio:')) return <RatioToken token={token} sz={sz} />;
   if (typeof token==='string'&&token.includes('_')&&!token.startsWith('pos_')&&!token.startsWith('img_')&&!token.startsWith('ratio:')) return <GsSymbolSVG token={token} sz={sz} />;
   if (/^-?\d+\.?\d*$/.test(String(token))) return (
